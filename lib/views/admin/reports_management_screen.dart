@@ -1,0 +1,968 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
+
+enum ReportType { falseReview, spam, offensive, incorrectInfo }
+
+enum ReportStatus { pending, handled }
+
+class ReportsManagementScreen extends StatefulWidget {
+  const ReportsManagementScreen({super.key});
+
+  static const routeName = '/admin/reports';
+
+  @override
+  State<ReportsManagementScreen> createState() =>
+      _ReportsManagementScreenState();
+}
+
+class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
+  ReportType? _selectedType;
+  ReportStatus? _selectedStatus;
+
+  late List<_ReportModel> _reports;
+  late List<_ReportModel> _filteredReports;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeMockReports();
+  }
+
+  void _initializeMockReports() {
+    _reports = [
+      _ReportModel(
+        id: 'report-001',
+        reviewId: 'review-001',
+        reviewerName: 'Sarah N.',
+        reviewerAvatar: 'https://i.pravatar.cc/120?img=47',
+        businessName: 'La Varangue',
+        businessLogo: 'https://picsum.photos/seed/reviewapp-restaurant/600/420',
+        reviewText:
+            'Service impeccable, plats très bien présentés et équipe vraiment attentive. Une vraie expérience gastronomique!',
+        reviewRating: 5.0,
+        reviewDate: DateTime.now().subtract(const Duration(days: 5)),
+        reporterName: 'Marc R.',
+        reporterAvatar: 'https://i.pravatar.cc/120?img=30',
+        reporterEmail: 'marc.r@email.com',
+        reportType: ReportType.spam,
+        reason:
+            'Cet avis provient d\'un compte frauduleux. Plusieurs avis identiques d\'autres restaurants.',
+        reportedAt: DateTime.now().subtract(const Duration(days: 2)),
+        status: ReportStatus.pending,
+        reporterHistory: ['report-002', 'report-003'],
+      ),
+      _ReportModel(
+        id: 'report-002',
+        reviewId: 'review-002',
+        reviewerName: 'Jean R.',
+        reviewerAvatar: 'https://i.pravatar.cc/120?img=12',
+        businessName: 'Toile Café',
+        businessLogo: 'https://picsum.photos/seed/cafe-2/600/420',
+        reviewText:
+            'Pire café jamais visité. Service nul et café froid. Dégoûtant!',
+        reviewRating: 1.0,
+        reviewDate: DateTime.now().subtract(const Duration(days: 3)),
+        reporterName: 'Sophie N.',
+        reporterAvatar: 'https://i.pravatar.cc/120?img=41',
+        reporterEmail: 'sophie.n@email.com',
+        reportType: ReportType.offensive,
+        reason:
+            'Langage agressif et insultes envers le personnel. Propos offensants.',
+        reportedAt: DateTime.now().subtract(const Duration(days: 1)),
+        status: ReportStatus.pending,
+        reporterHistory: [],
+      ),
+      _ReportModel(
+        id: 'report-003',
+        reviewId: 'review-003',
+        reviewerName: 'Tojo A.',
+        reviewerAvatar: 'https://i.pravatar.cc/120?img=22',
+        businessName: 'Madagascar Tours',
+        businessLogo: 'https://picsum.photos/seed/travel-1/600/420',
+        reviewText:
+            'Très belle adresse. Bon accueil mais prix élevés par rapport aux concurrents.',
+        reviewRating: 3.5,
+        reviewDate: DateTime.now().subtract(const Duration(days: 7)),
+        reporterName: 'Nicole B.',
+        reporterAvatar: 'https://i.pravatar.cc/120?img=55',
+        reporterEmail: 'nicole.b@email.com',
+        reportType: ReportType.incorrectInfo,
+        reason:
+            'Les informations sur les prix ne correspondent pas aux tarifs actuels (2025).',
+        reportedAt: DateTime.now().subtract(const Duration(hours: 18)),
+        status: ReportStatus.pending,
+        reporterHistory: [],
+      ),
+      _ReportModel(
+        id: 'report-004',
+        reviewId: 'review-004',
+        reviewerName: 'Miora R.',
+        reviewerAvatar: 'https://i.pravatar.cc/120?img=32',
+        businessName: 'Hotel Paradise',
+        businessLogo: 'https://picsum.photos/seed/hotel-1/600/420',
+        reviewText:
+            'Chambre pas propre, personnel impoli, pas de service en chambre comme promis. Une déception complète.',
+        reviewRating: 1.0,
+        reviewDate: DateTime.now().subtract(const Duration(days: 10)),
+        reporterName: 'Admin Review',
+        reporterAvatar: 'https://i.pravatar.cc/120?img=1',
+        reporterEmail: 'admin@reviewapp.mg',
+        reportType: ReportType.falseReview,
+        reason:
+            'Avis manifestement faux. Le client n\'a jamais séjourné à l\'hôtel (vérification booking).',
+        reportedAt: DateTime.now().subtract(const Duration(days: 8)),
+        status: ReportStatus.handled,
+        reporterHistory: [],
+      ),
+      _ReportModel(
+        id: 'report-005',
+        reviewId: 'review-005',
+        reviewerName: 'Rakoto J.',
+        reviewerAvatar: 'https://i.pravatar.cc/120?img=5',
+        businessName: 'Boutique Chic',
+        businessLogo: 'https://picsum.photos/seed/business-1/600/420',
+        reviewText:
+            'Bonne sélection de vêtements. Prix un peu élevés mais qualité au rendez-vous.',
+        reviewRating: 4.0,
+        reviewDate: DateTime.now().subtract(const Duration(days: 6)),
+        reporterName: 'Vicky R.',
+        reporterAvatar: 'https://i.pravatar.cc/120?img=16',
+        reporterEmail: 'vicky.r@email.com',
+        reportType: ReportType.spam,
+        reason:
+            'Compte créé aujourd\'hui, déjà 5 avis postés. Activité suspecte.',
+        reportedAt: DateTime.now().subtract(const Duration(hours: 3)),
+        status: ReportStatus.pending,
+        reporterHistory: ['report-005'],
+      ),
+      _ReportModel(
+        id: 'report-006',
+        reviewId: 'review-006',
+        reviewerName: 'Emma A.',
+        reviewerAvatar: 'https://i.pravatar.cc/120?img=55',
+        businessName: 'Restaurant Belle Vue',
+        businessLogo: 'https://picsum.photos/seed/business-3/600/420',
+        reviewText:
+            'Service excellent! Plats délicieux et atmosphère agréable. À recommander!',
+        reviewRating: 5.0,
+        reviewDate: DateTime.now().subtract(const Duration(days: 12)),
+        reporterName: 'Pierre R.',
+        reporterAvatar: 'https://i.pravatar.cc/120?img=28',
+        reporterEmail: 'pierre.r@email.com',
+        reportType: ReportType.offensive,
+        reason:
+            'Contient des références à d\'autres restaurants de manière dégradante.',
+        reportedAt: DateTime.now().subtract(const Duration(days: 4)),
+        status: ReportStatus.handled,
+        reporterHistory: [],
+      ),
+    ];
+
+    _filterReports();
+  }
+
+  void _filterReports() {
+    _filteredReports = _reports.where((report) {
+      final matchesType =
+          _selectedType == null || report.reportType == _selectedType;
+      final matchesStatus =
+          _selectedStatus == null || report.status == _selectedStatus;
+
+      return matchesType && matchesStatus;
+    }).toList();
+
+    _filteredReports.sort((a, b) => b.reportedAt.compareTo(a.reportedAt));
+    setState(() {});
+  }
+
+  String _getReportTypeLabel(ReportType type) {
+    switch (type) {
+      case ReportType.falseReview:
+        return 'Faux avis';
+      case ReportType.spam:
+        return 'Spam';
+      case ReportType.offensive:
+        return 'Offensant';
+      case ReportType.incorrectInfo:
+        return 'Info incorrecte';
+    }
+  }
+
+  Color _getReportTypeColor(ReportType type) {
+    switch (type) {
+      case ReportType.falseReview:
+        return Colors.red;
+      case ReportType.spam:
+        return Colors.orange;
+      case ReportType.offensive:
+        return Colors.deepOrange;
+      case ReportType.incorrectInfo:
+        return Colors.amber;
+    }
+  }
+
+  Future<void> _deleteReview(_ReportModel report) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Supprimer l\'avis'),
+          content: Text(
+            'Êtes-vous sûr de vouloir supprimer cet avis de "${report.reviewerName}"? Cette action est irréversible.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _reports.removeWhere((r) => r.id == report.id);
+        _filterReports();
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Avis supprimé avec succès.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _ignoreReport(_ReportModel report) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Ignorer le signalement'),
+          content: const Text(
+            'Êtes-vous sûr de vouloir ignorer ce signalement? L\'avis ne sera pas supprimé.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ignorer'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        report.status = ReportStatus.handled;
+        _filterReports();
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Signalement marqué comme traité.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _warnUser(_ReportModel report) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Avertir l\'utilisateur'),
+          content: Text(
+            'Envoyer un avertissement à "${report.reviewerName}"? Un email sera envoyé.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Avertir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        report.status = ReportStatus.handled;
+        _filterReports();
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Avertissement envoyé à ${report.reviewerName}.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _showReportDetails(_ReportModel report) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final reviewDate = DateFormat(
+      'd MMM yyyy',
+      'fr_FR',
+    ).format(report.reviewDate);
+    final reportDate = DateFormat(
+      'd MMM yyyy à HH:mm',
+      'fr_FR',
+    ).format(report.reportedAt);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Report info
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _getReportTypeColor(
+                        report.reportType,
+                      ).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _getReportTypeColor(
+                          report.reportType,
+                        ).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.flag_rounded,
+                              size: 18,
+                              color: _getReportTypeColor(report.reportType),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _getReportTypeLabel(report.reportType),
+                              style: textTheme.labelMedium?.copyWith(
+                                color: _getReportTypeColor(report.reportType),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: report.status == ReportStatus.pending
+                                    ? Colors.orange.withValues(alpha: 0.2)
+                                    : Colors.green.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                report.status == ReportStatus.pending
+                                    ? 'En attente'
+                                    : 'Traité',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: report.status == ReportStatus.pending
+                                      ? Colors.orange
+                                      : Colors.green,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Raison: ${report.reason}',
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Reviewed business
+                  Text(
+                    'Entreprise concernée',
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          report.businessLogo,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              report.businessName,
+                              style: textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              'Signalé le: $reportDate',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Review details
+                  Text(
+                    'Avis signalé',
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundImage: NetworkImage(
+                                  report.reviewerAvatar,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      report.reviewerName,
+                                      style: textTheme.labelMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      reviewDate,
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  ...List.generate(
+                                    5,
+                                    (i) => Icon(
+                                      i < report.reviewRating.toInt()
+                                          ? Icons.star_rounded
+                                          : Icons.star_outline_rounded,
+                                      size: 14,
+                                      color: Colors.amber,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(report.reviewText, style: textTheme.bodySmall),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Reporter info
+                  Text(
+                    'Signalé par',
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(report.reporterAvatar),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              report.reporterName,
+                              style: textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              report.reporterEmail,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Historique: ${report.reporterHistory.length} signalement${report.reporterHistory.length != 1 ? 's' : ''}',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Actions
+                  if (report.status == ReportStatus.pending)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _deleteReview(report);
+                          },
+                          icon: const Icon(Icons.delete_rounded),
+                          label: const Text('Supprimer l\'avis'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colorScheme.error,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _warnUser(report);
+                          },
+                          icon: const Icon(Icons.warning_rounded),
+                          label: const Text('Avertir l\'utilisateur'),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _ignoreReport(report);
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                          label: const Text('Ignorer le signalement'),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final pendingCount = _reports
+        .where((r) => r.status == ReportStatus.pending)
+        .length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Gestion des signalements'),
+        centerTitle: false,
+        actions: [
+          if (pendingCount > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                child: Badge(
+                  label: Text('$pendingCount'),
+                  child: const Icon(Icons.flag_rounded),
+                ),
+              ),
+            )
+          else
+            const SizedBox(width: 8),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Filters
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    selected: _selectedType == null,
+                    onSelected: (_) => setState(() => _selectedType = null),
+                    label: const Text('Tous les types'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    selected: _selectedType == ReportType.falseReview,
+                    onSelected: (_) =>
+                        setState(() => _selectedType = ReportType.falseReview),
+                    label: const Text('Faux avis'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    selected: _selectedType == ReportType.spam,
+                    onSelected: (_) =>
+                        setState(() => _selectedType = ReportType.spam),
+                    label: const Text('Spam'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    selected: _selectedType == ReportType.offensive,
+                    onSelected: (_) =>
+                        setState(() => _selectedType = ReportType.offensive),
+                    label: const Text('Offensant'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    selected: _selectedType == ReportType.incorrectInfo,
+                    onSelected: (_) => setState(
+                      () => _selectedType = ReportType.incorrectInfo,
+                    ),
+                    label: const Text('Info incorrecte'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    selected: _selectedStatus == null,
+                    onSelected: (_) => setState(() => _selectedStatus = null),
+                    label: const Text('Tous les statuts'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    selected: _selectedStatus == ReportStatus.pending,
+                    onSelected: (_) =>
+                        setState(() => _selectedStatus = ReportStatus.pending),
+                    label: const Text('En attente'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    selected: _selectedStatus == ReportStatus.handled,
+                    onSelected: (_) =>
+                        setState(() => _selectedStatus = ReportStatus.handled),
+                    label: const Text('Traités'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Results count
+            Text(
+              'Résultats: ${_filteredReports.length} signalement${_filteredReports.length != 1 ? 's' : ''}',
+              style: textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Reports list
+            if (_filteredReports.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.inbox_rounded,
+                        size: 48,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Aucun signalement',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _filteredReports.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final report = _filteredReports[index];
+                  final reportDate = DateFormat(
+                    'd MMM',
+                    'fr_FR',
+                  ).format(report.reportedAt);
+
+                  return Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: report.status == ReportStatus.pending
+                            ? _getReportTypeColor(
+                                report.reportType,
+                              ).withValues(alpha: 0.5)
+                            : colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: () => _showReportDetails(report),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: _getReportTypeColor(
+                                      report.reportType,
+                                    ).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.flag_rounded,
+                                    color: _getReportTypeColor(
+                                      report.reportType,
+                                    ),
+                                    size: 18,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Avis de "${report.reviewerName}" - ${report.businessName}',
+                                        style: textTheme.labelLarge?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _getReportTypeLabel(report.reportType),
+                                        style: textTheme.labelSmall?.copyWith(
+                                          color: _getReportTypeColor(
+                                            report.reportType,
+                                          ),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: report.status == ReportStatus.pending
+                                        ? Colors.orange.withValues(alpha: 0.2)
+                                        : Colors.green.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    report.status == ReportStatus.pending
+                                        ? 'En attente'
+                                        : 'Traité',
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color:
+                                          report.status == ReportStatus.pending
+                                          ? Colors.orange
+                                          : Colors.green,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Review excerpt
+                            Text(
+                              report.reviewText,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Footer
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 12,
+                                      backgroundImage: NetworkImage(
+                                        report.reporterAvatar,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      report.reporterName,
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  reportDate,
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ).animate().fadeIn(duration: 260.ms).slideY(begin: 0.04);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportModel {
+  final String id;
+  final String reviewId;
+  final String reviewerName;
+  final String reviewerAvatar;
+  final String businessName;
+  final String businessLogo;
+  final String reviewText;
+  final double reviewRating;
+  final DateTime reviewDate;
+  final String reporterName;
+  final String reporterAvatar;
+  final String reporterEmail;
+  final ReportType reportType;
+  final String reason;
+  final DateTime reportedAt;
+  ReportStatus status;
+  final List<String> reporterHistory;
+
+  _ReportModel({
+    required this.id,
+    required this.reviewId,
+    required this.reviewerName,
+    required this.reviewerAvatar,
+    required this.businessName,
+    required this.businessLogo,
+    required this.reviewText,
+    required this.reviewRating,
+    required this.reviewDate,
+    required this.reporterName,
+    required this.reporterAvatar,
+    required this.reporterEmail,
+    required this.reportType,
+    required this.reason,
+    required this.reportedAt,
+    required this.status,
+    required this.reporterHistory,
+  });
+}
