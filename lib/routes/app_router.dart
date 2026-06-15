@@ -103,9 +103,8 @@ class _ClientShellState extends ConsumerState<ClientShell> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final navigator = Navigator.maybeOf(context);
-        if (navigator != null && navigator.canPop()) {
-          navigator.pop();
+        if (context.canPop()) {
+          context.pop();
           return;
         }
 
@@ -190,9 +189,8 @@ class _BusinessShellState extends State<BusinessShell> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final navigator = Navigator.maybeOf(context);
-        if (navigator != null && navigator.canPop()) {
-          navigator.pop();
+        if (context.canPop()) {
+          context.pop();
           return;
         }
 
@@ -313,9 +311,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final navigator = Navigator.maybeOf(context);
-        if (navigator != null && navigator.canPop()) {
-          navigator.pop();
+        if (context.canPop()) {
+          context.pop();
           return;
         }
 

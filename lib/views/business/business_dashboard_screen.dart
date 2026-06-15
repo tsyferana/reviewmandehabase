@@ -97,349 +97,357 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tableau de bord'),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            tooltip: 'Paramètres',
-            onPressed: () {},
-            icon: const Icon(Icons.settings_rounded),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/profile');
+              }
+            },
+            tooltip: 'Retour au profil',
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          title: const Text('Mon Entreprise'),
+          centerTitle: false,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Aperçu', icon: Icon(Icons.analytics_outlined)),
+              Tab(text: 'Avis', icon: Icon(Icons.star_outline_rounded)),
+              Tab(text: 'Gestion', icon: Icon(Icons.inventory_2_outlined)),
+            ],
+          ),
+          actions: [
+            IconButton(
+              tooltip: 'Paramètres',
+              onPressed: () {},
+              icon: const Icon(Icons.settings_rounded),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: TabBarView(
           children: [
-            // Header with business info
-            Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          _businessLogo,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
+            // TAB 1: OVERVIEW
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colorScheme.outlineVariant),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _businessName,
-                              style: textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: _isActive
-                                        ? colorScheme.tertiary
-                                        : colorScheme.errorContainer,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _isActive
-                                      ? 'Actif'
-                                      : 'En attente d\'approbation',
-                                  style: textTheme.labelMedium?.copyWith(
-                                    color: _isActive
-                                        ? colorScheme.onTertiary
-                                        : colorScheme.onErrorContainer,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star_rounded,
-                                  size: 18,
-                                  color: colorScheme.secondary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$_averageRating ($_totalReviews avis)',
-                                  style: textTheme.labelMedium,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                .animate()
-                .fadeIn(duration: 420.ms)
-                .scale(
-                  begin: const Offset(0.96, 0.96),
-                  end: const Offset(1, 1),
-                  duration: 420.ms,
-                ),
-            const SizedBox(height: 24),
-
-            // Statistics Grid (2 columns)
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                _StatCard(
-                  icon: Icons.visibility_rounded,
-                  label: 'Vues totales',
-                  value: '$_totalViews',
-                  color: Colors.blue,
-                ),
-                _StatCard(
-                  icon: Icons.rate_review_rounded,
-                  label: 'Avis',
-                  value: '$_totalReviews',
-                  color: Colors.orange,
-                ),
-                _StatCard(
-                  icon: Icons.favorite_rounded,
-                  label: 'Favoris',
-                  value: '$_totalFavorites',
-                  color: Colors.red,
-                ),
-                _StatCard(
-                  icon: Icons.star_rounded,
-                  label: 'Note moyenne',
-                  value: '$_averageRating',
-                  color: Colors.amber,
-                ),
-                _StatCard(
-                  icon: Icons.person_rounded,
-                  label: 'Visiteurs ce mois',
-                  value: '$_visitorsThisMonth',
-                  color: Colors.green,
-                ),
-                _GrowthCard(
-                  percentage: _growthPercentage,
-                  isPositive: _growthPercentage >= 0,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Views Evolution Chart
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Évolution des vues',
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        SegmentedButton<int>(
-                          selected: {_selectedTimePeriod},
-                          showSelectedIcon: false,
-                          onSelectionChanged: (selection) {
-                            setState(() {
-                              _selectedTimePeriod = selection.first;
-                              _initializeMockData();
-                            });
-                          },
-                          segments: const [
-                            ButtonSegment(value: 7, label: Text('7j')),
-                            ButtonSegment(value: 30, label: Text('30j')),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    _SimpleLineChart(data: _viewsData),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: _daysLabels.asMap().entries.map((entry) {
-                        return Flexible(
-                          child: Text(
-                            entry.value,
-                            textAlign: TextAlign.center,
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Rating Distribution Chart
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Répartition des notes',
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    ...[5, 4, 3, 2, 1].map((rating) {
-                      final count = _ratingDistribution[rating] ?? 0;
-                      final total = _ratingDistribution.values.fold<int>(
-                        0,
-                        (a, b) => a + b,
-                      );
-                      final percentage = total > 0
-                          ? (count / total * 100).toStringAsFixed(0)
-                          : '0';
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
                         child: Row(
                           children: [
-                            SizedBox(
-                              width: 32,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                _businessLogo,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('$rating', style: textTheme.labelSmall),
-                                  Icon(
-                                    Icons.star_rounded,
-                                    size: 14,
-                                    color: Colors.amber,
+                                  Text(
+                                    _businessName,
+                                    style: textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: _isActive
+                                              ? colorScheme.tertiary
+                                              : colorScheme.errorContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _isActive
+                                            ? 'Actif'
+                                            : 'En attente d\'approbation',
+                                        style: textTheme.labelMedium?.copyWith(
+                                          color: _isActive
+                                              ? colorScheme.onTertiary
+                                              : colorScheme.onErrorContainer,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star_rounded,
+                                        size: 18,
+                                        color: colorScheme.secondary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$_averageRating ($_totalReviews avis)',
+                                        style: textTheme.labelMedium,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: total > 0 ? count / total : 0,
-                                  minHeight: 8,
-                                  backgroundColor:
-                                      colorScheme.surfaceContainerHighest,
-                                  valueColor: AlwaysStoppedAnimation(
-                                    Color.lerp(
-                                      colorScheme.error,
-                                      colorScheme.tertiary,
-                                      rating / 5,
-                                    )!,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            SizedBox(
-                              width: 48,
-                              child: Text(
-                                '$count ($percentage%)',
-                                textAlign: TextAlign.right,
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
-                      );
-                    }),
-                  ],
-                ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 420.ms)
+                      .scale(
+                        begin: const Offset(0.96, 0.96),
+                        end: const Offset(1, 1),
+                        duration: 420.ms,
+                      ),
+                  const SizedBox(height: 16),
+                  GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 0.9,
+                    children: [
+                      _StatCard(
+                        icon: Icons.visibility_rounded,
+                        label: 'Vues totales',
+                        value: '$_totalViews',
+                        color: Colors.blue,
+                      ),
+                      _StatCard(
+                        icon: Icons.rate_review_rounded,
+                        label: 'Avis',
+                        value: '$_totalReviews',
+                        color: Colors.orange,
+                      ),
+                      _StatCard(
+                        icon: Icons.favorite_rounded,
+                        label: 'Favoris',
+                        value: '$_totalFavorites',
+                        color: Colors.red,
+                      ),
+                      _StatCard(
+                        icon: Icons.star_rounded,
+                        label: 'Note moyenne',
+                        value: '$_averageRating',
+                        color: Colors.amber,
+                      ),
+                      _StatCard(
+                        icon: Icons.person_rounded,
+                        label: 'Visiteurs ce mois',
+                        value: '$_visitorsThisMonth',
+                        color: Colors.green,
+                      ),
+                      _GrowthCard(
+                        percentage: _growthPercentage,
+                        isPositive: _growthPercentage >= 0,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Fréquentation',
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SegmentedButton<int>(
+                                selected: {_selectedTimePeriod},
+                                showSelectedIcon: false,
+                                onSelectionChanged: (selection) {
+                                  setState(() {
+                                    _selectedTimePeriod = selection.first;
+                                    _initializeMockData();
+                                  });
+                                },
+                                segments: const [
+                                  ButtonSegment(value: 7, label: Text('7J')),
+                                  ButtonSegment(value: 30, label: Text('30J')),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _SimpleLineChart(data: _viewsData),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: _daysLabels.asMap().entries.map((entry) {
+                              return Flexible(
+                                child: Text(
+                                  entry.value,
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
 
-            // Recent Reviews
-            Text(
-              'Avis récents',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ..._recentReviews.map((review) {
-              final date = DateFormat(
-                'd MMM',
-                'fr_FR',
-              ).format(review.createdAt);
-              return _ReviewCard(review: review, date: date);
-            }),
-            const SizedBox(height: 24),
+            // TAB 2: REVIEWS
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Répartition des notes',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...[5, 4, 3, 2, 1].map((rating) {
+                            final count = _ratingDistribution[rating] ?? 0;
+                            final total = _ratingDistribution.values.fold<int>(
+                              0,
+                              (a, b) => a + b,
+                            );
+                            final percentage = total > 0
+                                ? (count / total * 100).toStringAsFixed(0)
+                                : '0';
 
-            // Quick Actions
-            Text(
-              'Actions rapides',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 32,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          '$rating',
+                                          style: textTheme.labelSmall,
+                                        ),
+                                        const Icon(
+                                          Icons.star_rounded,
+                                          size: 14,
+                                          color: Colors.amber,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: total > 0 ? count / total : 0,
+                                        minHeight: 8,
+                                        backgroundColor:
+                                            colorScheme.surfaceContainerHighest,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          Color.lerp(
+                                            colorScheme.error,
+                                            colorScheme.tertiary,
+                                            rating / 5,
+                                          )!,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '$percentage%',
+                                    style: textTheme.labelSmall,
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ..._recentReviews.map((review) {
+                    final date = DateFormat(
+                      'd MMM',
+                      'fr_FR',
+                    ).format(review.createdAt);
+                    return _ReviewCard(review: review, date: date);
+                  }),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
+
+            // TAB 3: ACTIONS & MANAGEMENT
             GridView.count(
+              padding: const EdgeInsets.all(16),
               crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               children: [
                 _ActionCard(
                   icon: Icons.edit_rounded,
                   label: 'Modifier profil',
-                  onTap: () => context.go('/business/edit'),
+                  onTap: () => context.push('/business/edit'),
                 ),
                 _ActionCard(
                   icon: Icons.comment_rounded,
                   label: 'Gérer les avis',
-                  onTap: () => context.go('/business/reviews'),
+                  onTap: () => context.push('/business/reviews'),
                 ),
                 _ActionCard(
                   icon: Icons.bar_chart_rounded,
-                  label: 'Statistiques détaillées',
-                  onTap: () => context.go('/business/statistics'),
+                  label: 'Statistiques',
+                  onTap: () => context.push('/business/statistics'),
                 ),
                 _ActionCard(
                   icon: Icons.settings_rounded,
@@ -475,36 +483,43 @@ class _StatCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(8),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: color, size: 20),
+              child: Icon(icon, color: color, size: 18),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
+            FittedBox(
+              child: Text(
+                value,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
             Text(
               label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: textTheme.labelSmall?.copyWith(
+                fontSize: 9,
                 color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -528,28 +543,29 @@ class _GrowthCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(8),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 isPositive
                     ? Icons.trending_up_rounded
                     : Icons.trending_down_rounded,
                 color: color,
-                size: 20,
+                size: 18,
               ),
             ),
             const SizedBox(height: 8),
@@ -557,12 +573,13 @@ class _GrowthCard extends StatelessWidget {
               'Croissance',
               style: textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
+                fontSize: 9,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               '${percentage.abs().toStringAsFixed(1)}%',
-              style: textTheme.headlineSmall?.copyWith(
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: color,
               ),

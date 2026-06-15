@@ -300,7 +300,7 @@ class _BusinessCard extends StatelessWidget {
           side: BorderSide(color: colorScheme.outlineVariant),
         ),
         child: InkWell(
-          onTap: () => context.go('/home/business/${business.id}'),
+          onTap: () => context.push('/home/business/${business.id}'),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
