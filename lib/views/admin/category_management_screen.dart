@@ -490,6 +490,7 @@ class _CategoryManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 900;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -497,13 +498,12 @@ class _CategoryManagementScreenState
       appBar: AppBar(
         title: const Text('Gestion des catégories'),
         centerTitle: false,
-        actions: [
-          IconButton(
-            tooltip: 'Déconnexion',
-            onPressed: _confirmLogout,
-            icon: const Icon(Icons.logout_rounded, color: Colors.red),
-          ),
-        ],
+        leading: isTablet
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddCategoryDialog,

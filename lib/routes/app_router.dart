@@ -222,19 +222,92 @@ class _BusinessShellState extends State<BusinessShell> {
   }
 }
 
-class AdminShell extends StatefulWidget {
+class AdminShell extends ConsumerStatefulWidget {
   final Widget child;
   const AdminShell({super.key, required this.child});
 
   @override
-  State<AdminShell> createState() => _AdminShellState();
+  ConsumerState<AdminShell> createState() => _AdminShellState();
 }
 
-class _AdminShellState extends State<AdminShell> {
+class _AdminShellState extends ConsumerState<AdminShell> {
   DateTime? _lastQuitPress;
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          icon: const Icon(Icons.logout_rounded),
+          title: const Text('Se déconnecter ?'),
+          content: const Text(
+            'Voulez-vous vraiment quitter votre session admin ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Déconnexion'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout == true) {
+      ref.read(authStateProvider.notifier).logout();
+      if (mounted) context.go('/login');
+    }
+  }
+
+  Widget _menu(BuildContext context) {
+    final items = [
+      ('Dashboard', Icons.dashboard, '/admin/dashboard'),
+      ('Users', Icons.people, '/admin/users'),
+      ('Approbations', Icons.check_circle_rounded, '/admin/approvals'),
+      ('Signalements', Icons.flag_rounded, '/admin/reports'),
+      ('Catégories', Icons.category_rounded, '/admin/categories'),
+    ];
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: items
+                .map(
+                  (e) => ListTile(
+                    leading: Icon(e.$2),
+                    title: Text(e.$1),
+                    onTap: () {
+                      if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                        Navigator.pop(context);
+                      }
+                      context.go(e.$3);
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.logout_rounded, color: Colors.red),
+          title: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
+          onTap: _confirmLogout,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 900;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -261,12 +334,25 @@ class _AdminShellState extends State<AdminShell> {
         }
       },
       child: Scaffold(
-        drawer: const AppDrawer(
-          userRole: 'admin',
-          userName: 'Admin',
-          userEmail: 'admin@email.com',
-        ),
-        body: widget.child,
+        drawer: isTablet ? null : Drawer(child: _menu(context)),
+        body: isTablet
+            ? Row(
+                children: [
+                  SizedBox(
+                    width: 280,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: _menu(context),
+                    ),
+                  ),
+                  Expanded(child: widget.child),
+                ],
+              )
+            : widget.child,
       ),
     );
   }

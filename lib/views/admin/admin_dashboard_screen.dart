@@ -12,8 +12,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
-
   final int _totalUsers = 1245;
   final int _totalBusinesses = 328;
   final int _totalReviews = 5847;
@@ -60,55 +58,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 900;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(title: const Text("Admin Dashboard")),
-      body: isTablet
-          ? Row(
-              children: [
-                SizedBox(width: 280, child: _sidebar(context)),
-                Expanded(child: _content(context)),
-              ],
-            )
-          : _content(context),
-      drawer: isTablet ? null : _drawer(context),
-    );
-  }
-
-  Widget _sidebar(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: Colors.grey.shade300)),
+      appBar: AppBar(
+        title: const Text("Admin Dashboard"),
+        leading: isTablet
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
       ),
-      child: _menu(context),
-    );
-  }
-
-  Widget _drawer(BuildContext context) {
-    return Drawer(child: _menu(context));
-  }
-
-  Widget _menu(BuildContext context) {
-    final items = [
-      ('Dashboard', Icons.dashboard, '/admin/dashboard'),
-      ('Users', Icons.people, '/admin/users'),
-      ('Approbations', Icons.check_circle_rounded, '/admin/approvals'),
-      ('Signalements', Icons.flag_rounded, '/admin/reports'),
-      ('Catégories', Icons.category_rounded, '/admin/categories'),
-    ];
-
-    return ListView(
-      children: items
-          .map(
-            (e) => ListTile(
-              leading: Icon(e.$2),
-              title: Text(e.$1),
-              onTap: () => context.go(e.$3),
-            ),
-          )
-          .toList(),
+      body: _content(context),
     );
   }
 
