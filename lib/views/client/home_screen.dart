@@ -282,7 +282,7 @@ class _BusinessSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 232,
+            height: 242,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -321,6 +321,7 @@ class _BusinessCard extends StatelessWidget {
         child: InkWell(
           onTap: () => context.go('/home/business/${business.id}'),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Hero(
@@ -346,8 +347,9 @@ class _BusinessCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -367,7 +369,7 @@ class _BusinessCard extends StatelessWidget {
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(

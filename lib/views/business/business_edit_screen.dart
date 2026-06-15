@@ -422,314 +422,213 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
         title: const Text('Modifier l\'entreprise'),
         centerTitle: false,
       ),
-      body: Theme(
-        data: Theme.of(context).copyWith(),
-        child: Stepper(
-          currentStep: _currentStep,
-          onStepContinue: _isSubmitting ? null : _onStepContinue,
-          onStepCancel: _isSubmitting ? null : _onStepCancel,
-          physics: const ScrollPhysics(),
-          steps: [
-            // Step 1: General Info
-            Step(
-              isActive: _currentStep >= 0,
-              state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-              title: const Text('Informations générales'),
-              content: Form(
-                key: _formKeys[0],
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom de l\'entreprise',
-                        prefixIcon: Icon(Icons.business_rounded),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value?.trim().isEmpty ?? true) {
-                          return 'Veuillez saisir le nom de votre entreprise.';
-                        }
-                        if (value!.trim().length < 3) {
-                          return 'Le nom doit contenir au moins 3 caractères.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    FutureBuilder<List<CategoryModel>>(
-                      future: _categoriesFuture,
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        final categories = snapshot.data!;
-                        return DropdownButtonFormField<CategoryModel>(
-                          initialValue: _selectedCategory ?? categories.first,
-                          decoration: const InputDecoration(
-                            labelText: 'Catégorie',
-                            prefixIcon: Icon(Icons.category_rounded),
-                            border: OutlineInputBorder(),
-                          ),
-                          items: categories.map((category) {
-                            return DropdownMenuItem(
-                              value: category,
-                              child: Row(
-                                children: [
-                                  Icon(category.icon, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(category.name),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) =>
-                              setState(() => _selectedCategory = value),
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Veuillez sélectionner une catégorie.';
-                            }
-                            return null;
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                        hintText: 'Décrivez votre entreprise...',
-                        prefixIcon: Icon(Icons.description_rounded),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value?.trim().isEmpty ?? true) {
-                          return 'Veuillez saisir une description.';
-                        }
-                        if (value!.trim().length < 10) {
-                          return 'La description doit contenir au moins 10 caractères.';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Step 2: Contact Info
-            Step(
-              isActive: _currentStep >= 1,
-              state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-              title: const Text('Coordonnées'),
-              content: Form(
-                key: _formKeys[1],
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _addressController,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Adresse complète',
-                        prefixIcon: Icon(Icons.location_on_rounded),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value?.trim().isEmpty ?? true) {
-                          return 'Veuillez saisir une adresse.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'Téléphone',
-                        prefixIcon: Icon(Icons.phone_rounded),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value?.trim().isEmpty ?? true) {
-                          return 'Veuillez saisir un numéro de téléphone.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_rounded),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value?.isNotEmpty ?? false) {
-                          final isEmailValid = RegExp(
-                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                          ).hasMatch(value!);
-                          if (!isEmailValid) {
-                            return 'Veuillez saisir un email valide.';
-                          }
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Step 3: Media
-            Step(
-              isActive: _currentStep >= 2,
-              state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-              title: const Text('Médias'),
-              content: Form(
-                key: _formKeys[2],
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    Text(
-                      'Logo',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    InkWell(
-                      onTap: _pickLogo,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: double.infinity,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withValues(
-                            alpha: 0.4,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: colorScheme.outlineVariant,
-                            style: BorderStyle.solid,
-                          ),
+      body: PopScope(
+        canPop: _currentStep == 0,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (_currentStep > 0) {
+            setState(() => _currentStep -= 1);
+          }
+        },
+        child: Theme(
+          data: Theme.of(context).copyWith(),
+          child: Stepper(
+            currentStep: _currentStep,
+            onStepContinue: _isSubmitting ? null : _onStepContinue,
+            onStepCancel: _isSubmitting ? null : _onStepCancel,
+            physics: const ScrollPhysics(),
+            steps: [
+              // Step 1: General Info
+              Step(
+                isActive: _currentStep >= 0,
+                state: _currentStep > 0
+                    ? StepState.complete
+                    : StepState.indexed,
+                title: const Text('Informations générales'),
+                content: Form(
+                  key: _formKeys[0],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nom de l\'entreprise',
+                          prefixIcon: Icon(Icons.business_rounded),
+                          border: OutlineInputBorder(),
                         ),
-                        child: _logoUrl == null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_photo_alternate_rounded,
-                                    size: 40,
-                                    color: colorScheme.primary,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Ajouter un logo',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                  ),
-                                ],
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  _logoUrl!,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                        validator: (value) {
+                          if (value?.trim().isEmpty ?? true) {
+                            return 'Veuillez saisir le nom de votre entreprise.';
+                          }
+                          if (value!.trim().length < 3) {
+                            return 'Le nom doit contenir au moins 3 caractères.';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Galerie (maximum 6 photos)',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_galleryUrls.isNotEmpty)
-                      GridView.count(
-                        crossAxisCount: 3,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        children: [
-                          ..._galleryUrls.map(
-                            (url) => Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(url, fit: BoxFit.cover),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() => _galleryUrls.remove(url));
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.error,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      padding: const EdgeInsets.all(4),
-                                      child: Icon(
-                                        Icons.close_rounded,
-                                        color: colorScheme.onError,
-                                        size: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      const SizedBox(height: 16),
+                      FutureBuilder<List<CategoryModel>>(
+                        future: _categoriesFuture,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          final categories = snapshot.data!;
+                          return DropdownButtonFormField<CategoryModel>(
+                            initialValue: _selectedCategory ?? categories.first,
+                            decoration: const InputDecoration(
+                              labelText: 'Catégorie',
+                              prefixIcon: Icon(Icons.category_rounded),
+                              border: OutlineInputBorder(),
                             ),
-                          ),
-                          if (_galleryUrls.length < 6)
-                            InkWell(
-                              onTap: _pickGalleryPhotos,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.outlineVariant,
-                                    style: BorderStyle.solid,
-                                  ),
+                            items: categories.map((category) {
+                              return DropdownMenuItem(
+                                value: category,
+                                child: Row(
+                                  children: [
+                                    Icon(category.icon, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(category.name),
+                                  ],
                                 ),
-                                child: Icon(
-                                  Icons.add_rounded,
-                                  color: colorScheme.primary,
-                                  size: 28,
-                                ),
-                              ),
-                            ),
-                        ],
+                              );
+                            }).toList(),
+                            onChanged: (value) =>
+                                setState(() => _selectedCategory = value),
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Veuillez sélectionner une catégorie.';
+                              }
+                              return null;
+                            },
+                          );
+                        },
                       ),
-                    if (_galleryUrls.isEmpty)
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _descriptionController,
+                        maxLines: 5,
+                        decoration: const InputDecoration(
+                          labelText: 'Description',
+                          hintText: 'Décrivez votre entreprise...',
+                          prefixIcon: Icon(Icons.description_rounded),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value?.trim().isEmpty ?? true) {
+                            return 'Veuillez saisir une description.';
+                          }
+                          if (value!.trim().length < 10) {
+                            return 'La description doit contenir au moins 10 caractères.';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Step 2: Contact Info
+              Step(
+                isActive: _currentStep >= 1,
+                state: _currentStep > 1
+                    ? StepState.complete
+                    : StepState.indexed,
+                title: const Text('Coordonnées'),
+                content: Form(
+                  key: _formKeys[1],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _addressController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Adresse complète',
+                          prefixIcon: Icon(Icons.location_on_rounded),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value?.trim().isEmpty ?? true) {
+                            return 'Veuillez saisir une adresse.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'Téléphone',
+                          prefixIcon: Icon(Icons.phone_rounded),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value?.trim().isEmpty ?? true) {
+                            return 'Veuillez saisir un numéro de téléphone.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_rounded),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value?.isNotEmpty ?? false) {
+                            final isEmailValid = RegExp(
+                              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                            ).hasMatch(value!);
+                            if (!isEmailValid) {
+                              return 'Veuillez saisir un email valide.';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Step 3: Media
+              Step(
+                isActive: _currentStep >= 2,
+                state: _currentStep > 2
+                    ? StepState.complete
+                    : StepState.indexed,
+                title: const Text('Médias'),
+                content: Form(
+                  key: _formKeys[2],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      Text(
+                        'Logo',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 12),
                       InkWell(
-                        onTap: _pickGalleryPhotos,
+                        onTap: _pickLogo,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           width: double.infinity,
-                          height: 120,
+                          height: 140,
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.4),
@@ -739,234 +638,167 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
                               style: BorderStyle.solid,
                             ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add_photo_alternate_rounded,
-                                size: 40,
-                                color: colorScheme.primary,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Ajouter des photos',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Step 4: Opening Hours
-            Step(
-              isActive: _currentStep >= 3,
-              state: _currentStep > 3 ? StepState.complete : StepState.indexed,
-              title: const Text('Horaires'),
-              content: Form(
-                key: _formKeys[3],
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    ..._openingHours.entries.map((entry) {
-                      final day = entry.key;
-                      final hours = entry.value;
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: colorScheme.outlineVariant),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                          child: _logoUrl == null
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        day,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                      ),
+                                    Icon(
+                                      Icons.add_photo_alternate_rounded,
+                                      size: 40,
+                                      color: colorScheme.primary,
                                     ),
-                                    Switch(
-                                      value: hours['isOpen'] as bool,
-                                      onChanged: (value) {
-                                        setState(() => hours['isOpen'] = value);
-                                      },
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Ajouter un logo',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
                                     ),
                                   ],
-                                ),
-                                if (hours['isOpen'] as bool) ...[
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: InkWell(
-                                          onTap: () => _selectTime(day, 'open'),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color:
-                                                    colorScheme.outlineVariant,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Ouverture',
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.labelSmall,
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  hours['open'] as String,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleSmall
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w800,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: InkWell(
-                                          onTap: () =>
-                                              _selectTime(day, 'close'),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color:
-                                                    colorScheme.outlineVariant,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Fermeture',
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.labelSmall,
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  hours['close'] as String,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleSmall
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w800,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                )
+                              : ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    _logoUrl!,
+                                    fit: BoxFit.cover,
                                   ),
-                                ] else
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      'Fermé ce jour',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Galerie (maximum 6 photos)',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 12),
+                      if (_galleryUrls.isNotEmpty)
+                        GridView.count(
+                          crossAxisCount: 3,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          children: [
+                            ..._galleryUrls.map(
+                              (url) => Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      url,
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(
+                                          () => _galleryUrls.remove(url),
+                                        );
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.error,
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.all(4),
+                                        child: Icon(
+                                          Icons.close_rounded,
+                                          color: colorScheme.onError,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_galleryUrls.length < 6)
+                              InkWell(
+                                onTap: _pickGalleryPhotos,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest
+                                        .withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: colorScheme.outlineVariant,
+                                      style: BorderStyle.solid,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.add_rounded,
+                                    color: colorScheme.primary,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      if (_galleryUrls.isEmpty)
+                        InkWell(
+                          onTap: _pickGalleryPhotos,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: double.infinity,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_rounded,
+                                  size: 40,
+                                  color: colorScheme.primary,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Ajouter des photos',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      );
-                    }),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Step 5: Services
-            Step(
-              isActive: _currentStep >= 4,
-              state: _currentStep > 4 ? StepState.complete : StepState.indexed,
-              title: const Text('Services'),
-              content: Form(
-                key: _formKeys[4],
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Services et tarifs',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        FilledButton.icon(
-                          onPressed: _addService,
-                          icon: const Icon(Icons.add_rounded),
-                          label: const Text('Ajouter'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_services.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Text(
-                            'Aucun service ajouté',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _services.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final service = _services[index];
-                          return Card(
+              // Step 4: Opening Hours
+              Step(
+                isActive: _currentStep >= 3,
+                state: _currentStep > 3
+                    ? StepState.complete
+                    : StepState.indexed,
+                title: const Text('Horaires'),
+                content: Form(
+                  key: _formKeys[3],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      ..._openingHours.entries.map((entry) {
+                        final day = entry.key;
+                        final hours = entry.value;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Card(
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -975,69 +807,270 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
                               ),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          service['name']!,
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          day,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .titleSmall
+                                              .titleMedium
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w800,
                                               ),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          service['price']!.isEmpty
-                                              ? 'Gratuit'
-                                              : '${service['price']} Ar',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium
-                                              ?.copyWith(
-                                                color: colorScheme
-                                                    .onSurfaceVariant,
+                                      ),
+                                      Switch(
+                                        value: hours['isOpen'] as bool,
+                                        onChanged: (value) {
+                                          setState(
+                                            () => hours['isOpen'] = value,
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  if (hours['isOpen'] as bool) ...[
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () =>
+                                                _selectTime(day, 'open'),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: colorScheme
+                                                      .outlineVariant,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Ouverture',
+                                                    style: Theme.of(
+                                                      context,
+                                                    ).textTheme.labelSmall,
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    hours['open'] as String,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleSmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: InkWell(
+                                            onTap: () =>
+                                                _selectTime(day, 'close'),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: colorScheme
+                                                      .outlineVariant,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Fermeture',
+                                                    style: Theme.of(
+                                                      context,
+                                                    ).textTheme.labelSmall,
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    hours['close'] as String,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleSmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_rounded),
-                                    onPressed: () => _editService(index),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline_rounded,
+                                  ] else
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(
+                                        'Fermé ce jour',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                            ),
+                                      ),
                                     ),
-                                    onPressed: () {
-                                      setState(() => _services.removeAt(index));
-                                    },
-                                  ),
                                 ],
                               ),
                             ),
-                          );
-                        },
-                      ),
-                  ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-          onStepTapped: (step) {
-            if (step < _currentStep) {
-              setState(() => _currentStep = step);
-            }
-          },
-        ),
-      ),
+
+              // Step 5: Services
+              Step(
+                isActive: _currentStep >= 4,
+                state: _currentStep > 4
+                    ? StepState.complete
+                    : StepState.indexed,
+                title: const Text('Services'),
+                content: Form(
+                  key: _formKeys[4],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Services et tarifs',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          FilledButton.icon(
+                            onPressed: _addService,
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Ajouter'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (_services.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Text(
+                              'Aucun service ajouté',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _services.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final service = _services[index];
+                            return Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: colorScheme.outlineVariant,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            service['name']!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            service['price']!.isEmpty
+                                                ? 'Gratuit'
+                                                : '${service['price']} Ar',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelMedium
+                                                ?.copyWith(
+                                                  color: colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_rounded),
+                                      onPressed: () => _editService(index),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                      ),
+                                      onPressed: () {
+                                        setState(
+                                          () => _services.removeAt(index),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            onStepTapped: (step) {
+              if (step < _currentStep) {
+                setState(() => _currentStep = step);
+              }
+            },
+          ), // End Stepper
+        ), // End Theme
+      ), // End PopScope
       persistentFooterButtons: [
         if (_isSubmitting)
           const Expanded(

@@ -76,7 +76,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         leading: IconButton(
           tooltip: 'Retour',
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _isLoading ? null : () => context.go('/login'),
+          onPressed: _isLoading
+              ? null
+              : () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/login');
+                  }
+                },
         ),
       ),
       body: SafeArea(
@@ -160,7 +168,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
-                      onPressed: _isLoading ? null : () => context.go('/login'),
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/login');
+                              }
+                            },
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                       ),

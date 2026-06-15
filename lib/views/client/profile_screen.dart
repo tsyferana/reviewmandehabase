@@ -384,13 +384,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.history_rounded,
                         title: 'Historique des avis',
                         subtitle: 'Voir vos avis publiés',
-                        onTap: () => context.go('/home/reviews/biz-001'),
+                        onTap: () => context.push('/home/reviews/biz-001'),
                       ),
                       _ProfileSectionTile(
                         icon: Icons.favorite_outline_rounded,
                         title: 'Mes favoris',
                         subtitle: 'Accéder à votre liste de favoris',
-                        onTap: () => context.go('/favorites'),
+                        onTap: () => context.push('/favorites'),
                       ),
                       _ProfileSectionTile(
                         icon: Icons.settings_outlined,
@@ -404,7 +404,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           icon: Icons.storefront_rounded,
                           title: 'Mon entreprise',
                           subtitle: 'Gérer votre présence professionnelle',
-                          onTap: () => context.go('/business/dashboard'),
+                          onTap: () => context.push('/business/dashboard'),
                         ),
                       _ProfileSectionTile(
                         icon: Icons.headset_mic_rounded,
@@ -527,8 +527,6 @@ class _ProfileSectionTile extends StatelessWidget {
     final effectiveColor = foregroundColor ?? colorScheme.onSurface;
 
     return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -1),
       leading: CircleAvatar(
         backgroundColor: effectiveColor.withValues(alpha: 0.12),
         child: Icon(icon, color: effectiveColor),

@@ -109,6 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) return;
         await _handleBack();
       },
       child: Scaffold(
@@ -123,32 +124,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Logo centré
+                      // Logo centré avec animation d'entrée
                       Center(
-                        child: Hero(
-                          tag: 'review-app-logo',
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: colorScheme.surface,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colorScheme.primary.withOpacity(0.2),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
+                        child:
+                            Hero(
+                                  tag: 'review-app-logo',
+                                  child: Container(
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colorScheme.primary
+                                              .withOpacity(0.2),
+                                          blurRadius: 24,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(14),
+                                    child: Image.asset(
+                                      'assets/logo/logored.png',
+                                      fit: BoxFit.contain,
+                                      alignment: Alignment.center,
+                                    ),
+                                  ),
+                                )
+                                .animate()
+                                .scale(
+                                  begin: const Offset(0.6, 0.6),
+                                  end: const Offset(1, 1),
+                                  duration: 600.ms,
+                                  curve: Curves.elasticOut,
+                                )
+                                .fadeIn(duration: 400.ms)
+                                .then(delay: 100.ms)
+                                .shimmer(
+                                  duration: 900.ms,
+                                  color: colorScheme.primary.withOpacity(0.3),
                                 ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(14),
-                            child: Image.asset(
-                              'assets/logo/logored.png',
-                              fit: BoxFit.contain,
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                        ),
                       ),
 
                       const SizedBox(height: 28),
@@ -234,7 +250,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: TextButton(
                           onPressed: _authController.isLoading
                               ? null
-                              : () => context.go('/forgot-password'),
+                              : () => context.push('/forgot-password'),
                           child: const Text('Mot de passe oublié ?'),
                         ),
                       ),
@@ -300,7 +316,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           TextButton(
                             onPressed: _authController.isLoading
                                 ? null
-                                : () => context.go('/register'),
+                                : () => context.push('/register'),
                             child: const Text(
                               'Créer un compte',
                               style: TextStyle(fontWeight: FontWeight.w700),

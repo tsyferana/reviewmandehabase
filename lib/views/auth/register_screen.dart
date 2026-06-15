@@ -112,7 +112,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: _authController.isLoading
               ? null
-              : () => context.go('/login'),
+              : () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/login');
+                  }
+                },
         ),
       ),
       body: SafeArea(
@@ -303,7 +309,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         TextButton(
                           onPressed: _authController.isLoading
                               ? null
-                              : () => context.go('/login'),
+                              : () {
+                                  if (context.canPop()) {
+                                    context.pop();
+                                  } else {
+                                    context.go('/login');
+                                  }
+                                },
                           child: const Text('Se connecter'),
                         ),
                       ],
