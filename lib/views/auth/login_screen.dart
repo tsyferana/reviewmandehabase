@@ -304,7 +304,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _SocialButton(
                         icon: Icons.g_mobiledata_rounded,
                         label: 'Continuer avec Google',
-                        onPressed: _authController.isLoading ? null : () {},
+                        onPressed: _authController.isLoading
+                            ? null
+                            : () {
+                                // Simulation de l'auto-enregistrement et connexion Google
+                                ref
+                                    .read(authStateProvider.notifier)
+                                    .loginAsClient('google-user-001');
+                                context.go('/home');
+                              },
                       ),
 
                       const SizedBox(height: 28),

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../repositories/user_repository.dart';
 import '../../routes/app_router.dart';
+
+// Provider global pour gérer le mode du thème (Clair, Sombre ou Système)
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -17,6 +21,10 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  // État local pour gérer les modifications (Mock)
+  late String _fullName;
+  String? _photoUrl;
+
   final MockUserRecord _currentUser = const MockUserRecord(
     id: 'user-business-001',
     fullName: 'Aina Rajaonarivelo',
@@ -25,8 +33,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     accountType: MockAccountType.businessOwner,
   );
 
+  @override
+  void initState() {
+    super.initState();
+    _fullName = _currentUser.fullName;
+    _photoUrl = null; // Initialement pas de photo (affiche les initiales)
+  }
+
   bool _notificationsEnabled = true;
-  bool _isDarkMode = false;
   String _language = 'Français';
 
   final DateTime _memberSince = DateTime(2023, 6, 15);
@@ -36,6 +50,94 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _formatMemberSince(DateTime date) {
     return DateFormat.yMMMM('fr_FR').format(date);
+  }
+
+  void _editProfile() {
+    final nameController = TextEditingController(text: _fullName);
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Modifier le profil'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () {
+                        // Simulation de sélection d'image dans la galerie
+                        final mockUrl =
+                            'https://picsum.photos/seed/${DateTime.now().millisecond}/300/300';
+                        setDialogState(() => _photoUrl = mockUrl);
+                        setState(() => _photoUrl = mockUrl);
+                      },
+                      borderRadius: BorderRadius.circular(50),
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 46,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
+                            backgroundImage: _photoUrl != null
+                                ? NetworkImage(_photoUrl!)
+                                : null,
+                            child: _photoUrl == null
+                                ? const Icon(Icons.person_rounded, size: 40)
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              child: const Icon(
+                                Icons.camera_alt_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom d\'affichage',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    setState(() => _fullName = nameController.text);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Enregistrer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _openSettingsSheet() {
@@ -48,6 +150,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final themeMode = ref.watch(themeModeProvider);
+            final isDark = themeMode == ThemeMode.dark;
+
             return Padding(
               padding: MediaQuery.of(context).viewInsets,
               child: Padding(
@@ -86,10 +191,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                     SwitchListTile(
-                      value: _isDarkMode,
+                      value: isDark,
                       onChanged: (value) {
-                        setState(() => _isDarkMode = value);
+                        // Met à jour le provider global
+                        ref.read(themeModeProvider.notifier).state = value
+                            ? ThemeMode.dark
+                            : ThemeMode.light;
+
+                        // Rafraîchit l'interface du modal et de l'écran
                         setModalState(() {});
+                        setState(() {});
                       },
                       title: const Text('Thème sombre'),
                       subtitle: const Text(
@@ -286,17 +397,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           CircleAvatar(
                             radius: 36,
                             backgroundColor: colorScheme.primaryContainer,
-                            child: Text(
-                              _currentUser.fullName
-                                  .split(' ')
-                                  .map((part) => part.isNotEmpty ? part[0] : '')
-                                  .take(2)
-                                  .join(),
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: colorScheme.onPrimaryContainer,
-                              ),
-                            ),
+                            backgroundImage: _photoUrl != null
+                                ? NetworkImage(_photoUrl!)
+                                : null,
+                            child: _photoUrl == null
+                                ? Text(
+                                    _fullName
+                                        .split(' ')
+                                        .map(
+                                          (part) =>
+                                              part.isNotEmpty ? part[0] : '',
+                                        )
+                                        .take(2)
+                                        .join(),
+                                    style: theme.textTheme.headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: colorScheme.onPrimaryContainer,
+                                        ),
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -304,7 +424,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _currentUser.fullName,
+                                  _fullName,
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -314,6 +434,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   _currentUser.email,
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
+                                    fontStyle: FontStyle.italic,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -329,7 +450,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                           ),
                           FilledButton.icon(
-                            onPressed: () {},
+                            onPressed: _editProfile,
                             icon: const Icon(Icons.edit_rounded),
                             label: const Text('Modifier'),
                           ),
@@ -368,6 +489,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       label: 'Membre depuis',
                       value: _formatMemberSince(_memberSince),
                     ),
+                    _ProfileStatCard(
+                      icon: Icons.history_rounded,
+                      label: 'Visites',
+                      value: '42',
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -405,6 +531,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Mon entreprise',
                           subtitle: 'Gérer votre présence professionnelle',
                           onTap: () => context.push('/business/dashboard'),
+                        ),
+                      if (_currentUser.accountType !=
+                          MockAccountType.businessOwner)
+                        _ProfileSectionTile(
+                          icon: Icons.add_business_rounded,
+                          title: 'Créer mon entreprise',
+                          subtitle: 'Enregistrez votre établissement',
+                          onTap: () => context.push('/business/create'),
                         ),
                       _ProfileSectionTile(
                         icon: Icons.headset_mic_rounded,

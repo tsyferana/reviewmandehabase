@@ -17,27 +17,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _selectedIndex = 0;
-
   Future<void> _refresh() {
     return ref.read(homeControllerProvider.notifier).refresh();
-  }
-
-  void _onNavigationSelected(int index) {
-    setState(() => _selectedIndex = index);
-
-    switch (index) {
-      case 0:
-        break;
-      case 1:
-        context.go('/search');
-      case 2:
-        context.go('/favorites');
-      case 3:
-        context.go('/notifications');
-      case 4:
-        context.go('/profile');
-    }
   }
 
   @override
