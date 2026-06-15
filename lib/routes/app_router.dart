@@ -93,11 +93,22 @@ class ClientShell extends ConsumerStatefulWidget {
 }
 
 class _ClientShellState extends ConsumerState<ClientShell> {
-  int _selectedIndex = 0;
   DateTime? _lastQuitPress;
+
+  int _getSelectedIndex(BuildContext context) {
+    final String location = GoRouterState.of(context).uri.path;
+    if (location.startsWith('/home')) return 0;
+    if (location.startsWith('/search')) return 1;
+    if (location.startsWith('/favorites')) return 2;
+    if (location.startsWith('/notifications')) return 3;
+    if (location.startsWith('/profile')) return 4;
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = _getSelectedIndex(context);
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -105,12 +116,6 @@ class _ClientShellState extends ConsumerState<ClientShell> {
 
         if (context.canPop()) {
           context.pop();
-          return;
-        }
-
-        if (_selectedIndex != 0) {
-          setState(() => _selectedIndex = 0);
-          context.go('/home');
           return;
         }
 
@@ -131,25 +136,23 @@ class _ClientShellState extends ConsumerState<ClientShell> {
       child: Scaffold(
         body: widget.child,
         bottomNavigationBar: CustomBottomNav(
-          currentIndex: _selectedIndex,
+          currentIndex: selectedIndex,
           onTap: (index) {
-            setState(() => _selectedIndex = index);
-
             switch (index) {
               case 0:
-                context.go('/home');
+                if (selectedIndex != 0) context.push('/home');
                 break;
               case 1:
-                context.go('/search');
+                if (selectedIndex != 1) context.push('/search');
                 break;
               case 2:
-                context.go('/favorites');
+                if (selectedIndex != 2) context.push('/favorites');
                 break;
               case 3:
-                context.go('/notifications');
+                if (selectedIndex != 3) context.push('/notifications');
                 break;
               case 4:
-                context.go('/profile');
+                if (selectedIndex != 4) context.push('/profile');
                 break;
             }
           },
@@ -261,7 +264,13 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     }
   }
 
+  bool _isItemActive(BuildContext context, String path) {
+    return GoRouterState.of(context).uri.path == path;
+  }
+
   Widget _menu(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final items = [
       ('Dashboard', Icons.dashboard, '/admin/dashboard'),
       ('Users', Icons.people, '/admin/users'),
@@ -272,23 +281,56 @@ class _AdminShellState extends ConsumerState<AdminShell> {
 
     return Column(
       children: [
+        DrawerHeader(
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.4),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.admin_panel_settings_rounded,
+                  size: 48,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Console Admin',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         Expanded(
           child: ListView(
             padding: EdgeInsets.zero,
-            children: items
-                .map(
-                  (e) => ListTile(
-                    leading: Icon(e.$2),
-                    title: Text(e.$1),
-                    onTap: () {
-                      if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
-                        Navigator.pop(context);
-                      }
-                      context.go(e.$3);
-                    },
+            children: items.map((e) {
+              final isActive = _isItemActive(context, e.$3);
+              return ListTile(
+                leading: Icon(
+                  e.$2,
+                  color: isActive ? colorScheme.primary : null,
+                ),
+                title: Text(
+                  e.$1,
+                  style: TextStyle(
+                    color: isActive ? colorScheme.primary : null,
+                    fontWeight: isActive ? FontWeight.bold : null,
                   ),
-                )
-                .toList(),
+                ),
+                selected: isActive,
+                onTap: () {
+                  if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                    Navigator.pop(context);
+                  }
+                  if (!isActive) context.push(e.$3);
+                },
+              );
+            }).toList(),
           ),
         ),
         const Divider(),
