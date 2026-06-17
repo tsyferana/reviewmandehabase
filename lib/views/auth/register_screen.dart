@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../controllers/auth_controller.dart';
+import '../../controllers/auth_providers.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/user_repository.dart';
 import '../../routes/app_router.dart';
@@ -24,7 +25,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  late final AuthController _authController;
 
   MockAccountType _accountType = MockAccountType.client;
   bool _acceptTerms = false;
@@ -34,27 +34,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _authController = AuthController(AuthRepository());
-    _authController.addListener(_onAuthStateChanged);
   }
 
   @override
   void dispose() {
-    _authController
-      ..removeListener(_onAuthStateChanged)
-      ..dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  void _onAuthStateChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   Future<void> _submit() async {
@@ -73,7 +62,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    final isRegistered = await _authController.register(
+    final authController = ref.read(authControllerProvider);
+
+    final isRegistered = await authController.register(
       fullName: _fullNameController.text,
       email: _emailController.text,
       phone: _phoneController.text,
@@ -84,17 +75,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
 
     if (isRegistered) {
-      if (_accountType == MockAccountType.businessOwner) {
-        ref.read(authStateProvider.notifier).loginAsBusiness('new-biz-001');
-      } else {
-        ref.read(authStateProvider.notifier).loginAsClient('new-user-001');
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user != null) {
+        final role = user.userMetadata?['account_type'] ?? 'client';
+        final authNotifier = ref.read(authStateProvider.notifier);
+
+        if (role == 'business_owner') {
+          authNotifier.loginAsBusiness(user.id);
+        } else {
+          authNotifier.loginAsClient(user.id);
+        }
       }
+
       context.go('/home');
       return;
     }
 
     final message =
-        _authController.errorMessage ?? 'Impossible de creer le compte.';
+        authController.errorMessage ?? 'Impossible de creer le compte.';
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -104,13 +102,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final authController = ref.watch(authControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'Retour',
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _authController.isLoading
+          onPressed: authController.isLoading
               ? null
               : () {
                   if (context.canPop()) {
@@ -161,7 +160,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                       ],
                       selected: {_accountType},
-                      onSelectionChanged: _authController.isLoading
+                      onSelectionChanged: authController.isLoading
                           ? null
                           : (selection) {
                               setState(() => _accountType = selection.first);
@@ -266,7 +265,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 10),
                     CheckboxListTile(
                       value: _acceptTerms,
-                      onChanged: _authController.isLoading
+                      onChanged: authController.isLoading
                           ? null
                           : (value) {
                               setState(() => _acceptTerms = value ?? false);
@@ -280,13 +279,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: _authController.isLoading ? null : _submit,
+                      onPressed: authController.isLoading ? null : _submit,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(54),
                       ),
                       child: AnimatedSwitcher(
                         duration: 180.ms,
-                        child: _authController.isLoading
+                        child: authController.isLoading
                             ? const SizedBox(
                                 key: ValueKey('register-loading'),
                                 width: 22,
@@ -307,7 +306,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       children: [
                         Text('Deja inscrit ?', style: textTheme.bodyMedium),
                         TextButton(
-                          onPressed: _authController.isLoading
+                          onPressed: authController.isLoading
                               ? null
                               : () {
                                   if (context.canPop()) {

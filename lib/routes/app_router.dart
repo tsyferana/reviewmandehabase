@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:review_app/views/auth/onboarding_screen.dart'; // Import the actual OnboardingScreen
 
@@ -9,6 +10,7 @@ import 'package:review_app/views/auth/login_screen.dart';
 import 'package:review_app/views/auth/splash_screen.dart';
 import 'package:review_app/views/auth/register_screen.dart';
 import 'package:review_app/views/auth/forgot_password_screen.dart';
+import 'package:review_app/views/auth/reset_password_screen.dart';
 import 'package:review_app/views/client/home_screen.dart';
 import 'package:review_app/views/client/search_screen.dart';
 import 'package:review_app/views/client/favorites_screen.dart';
@@ -35,21 +37,25 @@ class AuthState {
     this.isAuthenticated = false,
     this.userRole = 'guest',
     this.userId = '',
+    this.isPasswordRecovery = false,
   });
 
   final bool isAuthenticated;
   final String userRole;
   final String userId;
+  final bool isPasswordRecovery;
 
   AuthState copyWith({
     bool? isAuthenticated,
     String? userRole,
     String? userId,
+    bool? isPasswordRecovery,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       userRole: userRole ?? this.userRole,
       userId: userId ?? this.userId,
+      isPasswordRecovery: isPasswordRecovery ?? this.isPasswordRecovery,
     );
   }
 }
@@ -59,27 +65,76 @@ final authStateProvider = StateNotifierProvider<AuthStateNotifier, AuthState>(
 );
 
 class AuthStateNotifier extends StateNotifier<AuthState> {
-  AuthStateNotifier() : super(const AuthState());
+  AuthStateNotifier() : super(const AuthState()) {
+    _init();
+    _listenToAuthChanges();
+  }
+
+  void _init() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      // On récupère le rôle dans les métadonnées ou par défaut 'client'
+      final role = user.userMetadata?['account_type'] ?? 'client';
+      state = AuthState(
+        isAuthenticated: true,
+        userRole: role == 'business_owner' ? 'business' : role,
+        userId: user.id,
+      );
+    }
+  }
+
+  void _listenToAuthChanges() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      final session = data.session;
+
+      if (event == AuthChangeEvent.signedIn) {
+        if (session != null) {
+          final role = session.user.userMetadata?['account_type'] ?? 'client';
+          state = AuthState(
+            isAuthenticated: true,
+            userRole: role == 'business_owner' ? 'business' : role,
+            userId: session.user.id,
+          );
+        }
+      } else if (event == AuthChangeEvent.signedOut) {
+        state = const AuthState();
+      } else if (event == AuthChangeEvent.passwordRecovery) {
+        state = state.copyWith(
+          isAuthenticated: true,
+          isPasswordRecovery: true,
+        );
+      }
+    });
+  }
+
+  void updateState(AuthState newState) => state = newState;
 
   void loginAsClient(String id) => state = state.copyWith(
     isAuthenticated: true,
     userRole: 'client',
     userId: id,
+    isPasswordRecovery: false,
   );
 
   void loginAsBusiness(String id) => state = state.copyWith(
     isAuthenticated: true,
     userRole: 'business',
     userId: id,
+    isPasswordRecovery: false,
   );
 
   void loginAsAdmin(String id) => state = state.copyWith(
     isAuthenticated: true,
     userRole: 'admin',
     userId: id,
+    isPasswordRecovery: false,
   );
 
-  void logout() => state = const AuthState();
+  void logout() async {
+    await Supabase.instance.client.auth.signOut();
+    state = const AuthState();
+  }
 }
 
 // ================= SHELL CLIENT =================
@@ -407,11 +462,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final location = state.uri.path;
 
+      if (auth.isPasswordRecovery && location != '/reset-password') {
+        return '/reset-password';
+      }
+
       final public = [
         '/splash',
         '/login',
         '/register',
         '/forgot-password',
+        '/reset-password',
         '/onboarding',
       ];
 
@@ -419,7 +479,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      if (auth.isAuthenticated && public.contains(location)) {
+      if (auth.isAuthenticated && !auth.isPasswordRecovery && public.contains(location)) {
         switch (auth.userRole) {
           case 'client':
             return '/home';
@@ -443,6 +503,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/forgot-password',
         builder: (_, __) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (_, __) => const ResetPasswordScreen(),
       ),
 
       ShellRoute(

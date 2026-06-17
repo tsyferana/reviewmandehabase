@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
+import '../../controllers/auth_providers.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   static const routeName = '/forgot-password';
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,53 +31,67 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    final authController = ref.read(authControllerProvider);
+    final success = await authController.sendPasswordResetEmail(
+      _emailController.text.trim(),
+    );
 
     if (!mounted) return;
 
-    setState(() => _isLoading = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Lien de reinitialisation envoye a ${_emailController.text.trim()}.',
-        ),
-      ),
-    );
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          icon: const Icon(Icons.mark_email_read_outlined),
-          title: const Text('Email envoye'),
-          content: const Text(
-            'Si un compte existe avec cette adresse, vous recevrez un lien '
-            'pour reinitialiser votre mot de passe.',
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Lien de réinitialisation envoyé à ${_emailController.text.trim()}.',
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Compris'),
+        ),
+      );
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            icon: const Icon(Icons.mark_email_read_outlined),
+            title: const Text('Email envoyé'),
+            content: const Text(
+              'Si un compte existe avec cette adresse, vous recevrez un lien '
+              'pour réinitialiser votre mot de passe.',
             ),
-          ],
-        );
-      },
-    );
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.go('/login');
+                },
+                child: const Text('Compris'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authController.errorMessage ?? 'Une erreur est survenue.',
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isLoading = ref.watch(authControllerProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'Retour',
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _isLoading
+          onPressed: isLoading
               ? null
               : () {
                   if (context.canPop()) {
@@ -113,15 +128,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 28),
                     Text(
-                      'Mot de passe oublie',
+                      'Mot de passe oublié',
                       style: textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Saisissez votre email. Nous simulerons l’envoi d’un lien '
-                      'de reinitialisation pour recuperer votre compte.',
+                      'Saisissez votre email. Nous allons vous envoyer un lien '
+                      'de réinitialisation pour récupérer votre compte.',
                       style: textTheme.bodyLarge?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         height: 1.35,
@@ -130,7 +145,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _emailController,
-                      enabled: !_isLoading,
+                      enabled: !isLoading,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
                       autofillHints: const [AutofillHints.email],
@@ -144,23 +159,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: _isLoading ? null : _sendResetLink,
+                      onPressed: isLoading ? null : _sendResetLink,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(54),
                       ),
                       child: AnimatedSwitcher(
                         duration: 180.ms,
-                        child: _isLoading
+                        child: isLoading
                             ? const SizedBox(
                                 key: ValueKey('forgot-loading'),
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.4,
+                                  color: Colors.white,
                                 ),
                               )
                             : const Text(
-                                'Envoyer le lien de reinitialisation',
+                                'Envoyer le lien de réinitialisation',
                                 key: ValueKey('forgot-label'),
                                 textAlign: TextAlign.center,
                               ),
@@ -168,7 +184,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
-                      onPressed: _isLoading
+                      onPressed: isLoading
                           ? null
                           : () {
                               if (context.canPop()) {
@@ -181,7 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         minimumSize: const Size.fromHeight(52),
                       ),
                       icon: const Icon(Icons.arrow_back_rounded),
-                      label: const Text('Retour a la connexion'),
+                      label: const Text('Retour à la connexion'),
                     ),
                   ],
                 ),

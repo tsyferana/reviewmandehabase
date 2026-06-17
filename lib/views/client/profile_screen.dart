@@ -3,9 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../repositories/user_repository.dart';
+import '../../repositories/auth_repository.dart';
 import '../../routes/app_router.dart';
 
 // Provider global pour gérer le mode du thème (Clair, Sombre ou Système)
@@ -25,18 +27,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late String _fullName;
   String? _photoUrl;
 
-  final MockUserRecord _currentUser = const MockUserRecord(
-    id: 'user-business-001',
-    fullName: 'Aina Rajaonarivelo',
-    email: 'business@reviewapp.test',
-    phone: '+261 34 12 34 567',
-    accountType: MockAccountType.businessOwner,
-  );
-
   @override
   void initState() {
     super.initState();
-    _fullName = _currentUser.fullName;
+    final user = Supabase.instance.client.auth.currentUser;
+    _fullName = user?.userMetadata?['full_name'] ?? 'Utilisateur';
     _photoUrl = null; // Initialement pas de photo (affiche les initiales)
   }
 
@@ -279,6 +274,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (shouldLogout == true) {
+      await Supabase.instance.client.auth.signOut();
       ref.read(authStateProvider.notifier).logout();
       if (mounted) context.go('/login');
     }
@@ -359,6 +355,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final user = Supabase.instance.client.auth.currentUser;
     final colorScheme = theme.colorScheme;
     final isDark = colorScheme.brightness == Brightness.dark;
     final backgroundGradient = LinearGradient(
@@ -431,7 +428,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  _currentUser.email,
+                                  user?.email ?? '',
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                     fontStyle: FontStyle.italic,
@@ -440,8 +437,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 const SizedBox(height: 10),
                                 Chip(
                                   label: Text(
-                                    _currentUser.accountType ==
-                                            MockAccountType.businessOwner
+                                    user?.userMetadata?['account_type'] ==
+                                            'business_owner'
                                         ? 'Propriétaire d’entreprise'
                                         : 'Utilisateur',
                                   ),
@@ -524,16 +521,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         subtitle: 'Notifications, langue et thème',
                         onTap: _openSettingsSheet,
                       ),
-                      if (_currentUser.accountType ==
-                          MockAccountType.businessOwner)
+                      if (user?.userMetadata?['account_type'] ==
+                          'business_owner')
                         _ProfileSectionTile(
                           icon: Icons.storefront_rounded,
                           title: 'Mon entreprise',
                           subtitle: 'Gérer votre présence professionnelle',
                           onTap: () => context.push('/business/dashboard'),
                         ),
-                      if (_currentUser.accountType !=
-                          MockAccountType.businessOwner)
+                      if (user?.userMetadata?['account_type'] !=
+                          'business_owner')
                         _ProfileSectionTile(
                           icon: Icons.add_business_rounded,
                           title: 'Créer mon entreprise',

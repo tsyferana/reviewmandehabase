@@ -1,39 +1,37 @@
-import 'package:flutter/foundation.dart';
-
+import 'package:flutter/material.dart';
+import '../repositories/user_repository.dart'; // Pour MockAccountType
 import '../repositories/auth_repository.dart';
-import '../repositories/user_repository.dart';
 
 class AuthController extends ChangeNotifier {
-  AuthController(this._authRepository);
+  AuthController(this._repository);
 
-  final AuthRepository _authRepository;
-
+  final AuthRepository _repository;
   bool _isLoading = false;
   String? _errorMessage;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
-    _setLoading(true);
+  /// Tente de connecter l'utilisateur et retourne un booléen en cas de succès
+  Future<bool> login({required String email, required String password}) async {
+    _isLoading = true;
     _errorMessage = null;
+    notifyListeners();
 
-    final isAuthenticated = await _authRepository.signIn(
-      email: email,
-      password: password,
-    );
-
-    if (!isAuthenticated) {
-      _errorMessage = 'Email ou mot de passe incorrect.';
+    try {
+      await _repository.signIn(email: email, password: password);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-
-    _setLoading(false);
-    return isAuthenticated;
   }
 
+  /// Gère l'inscription d'un utilisateur
   Future<bool> register({
     required String fullName,
     required String email,
@@ -41,27 +39,66 @@ class AuthController extends ChangeNotifier {
     required String password,
     required MockAccountType accountType,
   }) async {
-    _setLoading(true);
+    _isLoading = true;
     _errorMessage = null;
+    notifyListeners();
 
-    final isRegistered = await _authRepository.register(
-      fullName: fullName,
-      email: email,
-      phone: phone,
-      password: password,
-      accountType: accountType,
-    );
-
-    if (!isRegistered) {
-      _errorMessage = 'Un compte existe deja avec cet email.';
+    try {
+      await _repository.signUp(
+        email: email,
+        password: password,
+        fullName: fullName,
+        phone: phone,
+        accountType: accountType == MockAccountType.businessOwner
+            ? 'business_owner'
+            : 'client',
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-
-    _setLoading(false);
-    return isRegistered;
   }
 
-  void _setLoading(bool value) {
-    _isLoading = value;
+  /// Demande l'envoi d'un mail de réinitialisation de mot de passe
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      await _repository.sendPasswordResetEmail(email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Réinitialise le mot de passe de l'utilisateur connecté
+  Future<bool> updatePassword(String newPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.updatePassword(newPassword);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 }

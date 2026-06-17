@@ -1,50 +1,81 @@
-import 'user_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
-  AuthRepository({UserRepository? userRepository})
-    : _userRepository = userRepository ?? UserRepository();
+  final _supabase = Supabase.instance.client;
 
-  final UserRepository _userRepository;
-
-  static final Map<String, String> _mockUsers = {
-    'client@reviewapp.test': 'password123',
-    'business@reviewapp.test': 'password123',
-    'admin@reviewapp.test': 'password123',
-  };
-
-  Future<bool> signIn({required String email, required String password}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-
-    final normalizedEmail = email.trim().toLowerCase();
-    return true; // Accepter n'importe quel login pour le test
+  /// Connecte un utilisateur avec son email et son mot de passe
+  Future<AuthResponse> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      return await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } on AuthException catch (e) {
+      // Retourne le message d'erreur spécifique de Supabase (ex: identifiants invalides)
+      throw e.message;
+    } catch (e) {
+      throw 'Une erreur inattendue est survenue lors de la connexion.';
+    }
   }
 
-  Future<bool> register({
-    required String fullName,
+  /// Inscrit un nouvel utilisateur et remplit les métadonnées pour le profil SQL
+  Future<AuthResponse> signUp({
     required String email,
-    required String phone,
     required String password,
-    required MockAccountType accountType,
+    required String fullName,
+    required String phone,
+    required String accountType,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 650));
-
-    final normalizedEmail = email.trim().toLowerCase();
-    final emailAlreadyExists = await _userRepository.emailExists(
-      normalizedEmail,
-    );
-
-    if (emailAlreadyExists || _mockUsers.containsKey(normalizedEmail)) {
-      return false;
+    try {
+      return await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'full_name': fullName,
+          'phone': phone,
+          'account_type': accountType,
+        },
+      );
+    } on AuthException catch (e) {
+      throw e.message;
+    } catch (e) {
+      throw 'Une erreur est survenue lors de l\'inscription.';
     }
+  }
 
-    await _userRepository.addUser(
-      fullName: fullName,
-      email: normalizedEmail,
-      phone: phone,
-      accountType: accountType,
-    );
+  /// Déconnecte l'utilisateur
+  Future<void> signOut() async => await _supabase.auth.signOut();
 
-    _mockUsers[normalizedEmail] = password;
-    return true;
+  /// Récupère l'utilisateur actuel s'il est connecté
+  User? get currentUser => _supabase.auth.currentUser;
+
+  /// Envoie un e-mail de réinitialisation de mot de passe
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'reviewapp://reset-callback',
+      );
+    } on AuthException catch (e) {
+      throw e.message;
+    } catch (e) {
+      throw 'Une erreur est survenue lors de l\'envoi de l\'e-mail.';
+    }
+  }
+
+  /// Met à jour le mot de passe de l'utilisateur connecté
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+    } on AuthException catch (e) {
+      throw e.message;
+    } catch (e) {
+      throw 'Une erreur est survenue lors de la mise à jour du mot de passe.';
+    }
   }
 }
