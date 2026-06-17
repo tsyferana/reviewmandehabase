@@ -1,22 +1,16 @@
 import '../models/business_model.dart';
-import '../services/mock_data_service.dart';
+import '../services/supabase_data_service.dart';
 
 class FavoriteRepository {
-  FavoriteRepository({MockDataService? mockDataService})
-      : _mockDataService = mockDataService ?? MockDataService();
+  FavoriteRepository({SupabaseDataService? dataService})
+      : _dataService = dataService ?? SupabaseDataService();
 
-  final MockDataService _mockDataService;
+  final SupabaseDataService _dataService;
 
-  static final Set<String> _favoriteBusinessIds = {
-    'biz-001',
-    'biz-003',
-    'biz-005',
-    'biz-008',
-  };
+  static final Set<String> _favoriteBusinessIds = {};
 
   Future<List<BusinessModel>> getFavorites() async {
-    await Future<void>.delayed(const Duration(milliseconds: 450));
-    final businesses = await _mockDataService.getBusinesses();
+    final businesses = await _dataService.getBusinesses();
 
     return businesses
         .where((business) => _favoriteBusinessIds.contains(business.id))
@@ -24,12 +18,10 @@ class FavoriteRepository {
   }
 
   Future<void> removeFavorite(String businessId) async {
-    await Future<void>.delayed(const Duration(milliseconds: 260));
     _favoriteBusinessIds.remove(businessId);
   }
 
   Future<void> addFavorite(String businessId) async {
-    await Future<void>.delayed(const Duration(milliseconds: 260));
     _favoriteBusinessIds.add(businessId);
   }
 }

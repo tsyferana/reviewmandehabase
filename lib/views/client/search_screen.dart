@@ -8,7 +8,7 @@ import '../../models/business_model.dart';
 import '../../models/category_model.dart';
 import '../../services/location_sim_service.dart';
 import '../../services/maps_sim_service.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/supabase_data_service.dart';
 
 enum _SearchViewMode { list, map }
 
@@ -26,7 +26,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
-  final _mockDataService = MockDataService();
+  final _dataService = SupabaseDataService();
   final _locationService = LocationSimService();
   final _mapsService = MapsSimService();
 
@@ -65,8 +65,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _loadSearchData() async {
     final results = await Future.wait([
-      _mockDataService.getCategories(),
-      _mockDataService.getBusinesses(),
+      _dataService.getCategories(),
+      _dataService.getBusinesses(),
     ]);
 
     if (!mounted) return;

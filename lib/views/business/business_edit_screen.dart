@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/category_model.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/supabase_data_service.dart';
 
 class BusinessEditScreen extends StatefulWidget {
   const BusinessEditScreen({super.key});
@@ -65,7 +65,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
   void initState() {
     super.initState();
     _initializeWithMockData();
-    _categoriesFuture = MockDataService().getCategories();
+    _categoriesFuture = SupabaseDataService().getCategories();
   }
 
   void _initializeWithMockData() {

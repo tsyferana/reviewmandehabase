@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/business_model.dart';
 import '../models/category_model.dart';
 import '../services/location_sim_service.dart';
-import '../services/mock_data_service.dart';
+import '../services/supabase_data_service.dart';
 
-final mockDataServiceProvider = Provider<MockDataService>((ref) {
-  return MockDataService();
+final supabaseDataServiceProvider = Provider<SupabaseDataService>((ref) {
+  return SupabaseDataService();
 });
 
 final locationSimServiceProvider = Provider<LocationSimService>((ref) {
@@ -28,14 +28,14 @@ class HomeController extends AsyncNotifier<HomeState> {
   }
 
   Future<HomeState> _loadHome() async {
-    final mockDataService = ref.read(mockDataServiceProvider);
+    final dataService = ref.read(supabaseDataServiceProvider);
     final locationService = ref.read(locationSimServiceProvider);
 
     final results = await Future.wait([
       locationService.getCurrentCity(),
-      mockDataService.getCategories(),
-      mockDataService.getBusinesses(),
-      mockDataService.getUnreadNotificationsCount(),
+      dataService.getCategories(),
+      dataService.getBusinesses(),
+      dataService.getUnreadNotificationsCount(),
     ]);
 
     final city = results[0] as String;

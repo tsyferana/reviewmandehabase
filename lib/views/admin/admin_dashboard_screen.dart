@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui' as ui;
+import '../../services/supabase_data_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -12,11 +13,12 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final int _totalUsers = 1245;
-  final int _totalBusinesses = 328;
-  final int _totalReviews = 5847;
-  final int _pendingReports = 12;
-  final int _pendingApprovals = 18;
+  int _totalUsers = 0;
+  int _totalBusinesses = 0;
+  int _totalReviews = 0;
+  int _pendingReports = 0;
+  int _pendingApprovals = 0;
+  bool _isLoading = true;
 
   late List<int> _usersGrowthData;
   late List<String> _growthLabels;
@@ -37,22 +39,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _growthLabels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
     _usersGrowthData = [285, 320, 298, 342];
 
-    _recentActivity = [
-      _ActivityItem(
-        type: 'user',
-        title: 'Nouvel utilisateur',
-        subtitle: 'Aina Rajaonarivelo',
-        icon: Icons.person_add,
-        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-      ),
-      _ActivityItem(
-        type: 'report',
-        title: 'Signalement reçu',
-        subtitle: 'Avis problématique',
-        icon: Icons.flag,
-        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-    ];
+    _recentActivity = [];
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final stats = await SupabaseDataService().getAdminDashboardStats();
+      if (mounted) {
+        setState(() {
+          _totalUsers = stats['users'] ?? 0;
+          _totalBusinesses = stats['businesses'] ?? 0;
+          _totalReviews = stats['reviews'] ?? 0;
+          _pendingReports = stats['pendingReports'] ?? 0;
+          _pendingApprovals = stats['pendingApprovals'] ?? 0;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // On pourrait afficher une erreur ici
+      }
+    }
   }
 
   @override
@@ -69,7 +78,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
       ),
-      body: _content(context),
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : _content(context),
     );
   }
 

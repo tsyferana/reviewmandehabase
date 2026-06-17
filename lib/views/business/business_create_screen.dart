@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import '../../models/category_model.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/supabase_data_service.dart';
 
 class BusinessCreateScreen extends StatefulWidget {
   const BusinessCreateScreen({super.key});
@@ -35,12 +39,12 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
   late TextEditingController _addressController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
-  final double _latitude = -18.8792;
-  final double _longitude = 47.5079;
+  double _latitude = -18.8792;
+  double _longitude = 47.5079;
 
   // Step 3: Media
-  String? _logoUrl;
-  final List<String> _galleryUrls = [];
+  File? _logoFile;
+  final List<File> _galleryFiles = [];
 
   // Step 4: Opening hours
   final Map<String, Map<String, dynamic>> _openingHours = {
@@ -61,7 +65,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
     _addressController = TextEditingController();
     _phoneController = TextEditingController();
     _emailController = TextEditingController();
-    _categoriesFuture = MockDataService().getCategories();
+    _categoriesFuture = SupabaseDataService().getCategories();
   }
 
   @override
@@ -100,29 +104,44 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      if (_selectedCategory == null) throw 'Veuillez sélectionner une catégorie.';
+      
+      await SupabaseDataService().createBusiness(
+        name: _nameController.text.trim(),
+        categoryId: _selectedCategory!.id,
+        description: _descriptionController.text.trim(),
+        address: _addressController.text.trim(),
+        latitude: _latitude,
+        longitude: _longitude,
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        openingHours: _openingHours,
+        logoFile: _logoFile,
+        galleryFiles: _galleryFiles,
+      );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Entreprise créée avec succès ! En attente d\'approbation.',
-          ),
-          duration: Duration(seconds: 2),
+          content: Text('Entreprise créée avec succès ! En attente d\'approbation.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
         ),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-
-      if (mounted) {
-        context.go('/home');
-      }
+      context.go('/home');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          )
+        );
+      }
+    } finally {
+      if (mounted) {
         setState(() => _isSubmitting = false);
       }
     }
@@ -156,73 +175,83 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
     }
   }
 
-  Future<void> _pickLogo() async {
-    await showDialog<void>(
+  Future<void> _pickLocationOnMap() async {
+    LatLng selectedPos = LatLng(_latitude, _longitude);
+    final result = await showDialog<LatLng>(
       context: context,
       builder: (context) {
-        return SimpleDialog(
-          title: const Text('Choisir une image'),
-          children: [
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(
-                  () => _logoUrl =
-                      'https://picsum.photos/seed/logo-${DateTime.now().millisecond}/300/300',
-                );
-              },
-              child: const Text('Depuis la galerie'),
-            ),
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() => _logoUrl = 'https://i.pravatar.cc/300');
-              },
-              child: const Text('Prendre une photo'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Sélectionner la position'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.map_rounded, size: 48, color: Colors.grey.shade600),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Google Maps désactivé\n(Clé API manquante)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, selectedPos),
+                  child: const Text('Valider'),
+                ),
+              ],
+            );
+          }
         );
-      },
+      }
     );
+
+    if (result != null) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+      });
+    }
+  }
+
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() => _logoFile = File(pickedFile.path));
+    }
   }
 
   Future<void> _pickGalleryPhotos() async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: const Text('Ajouter une photo'),
-          children: [
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context);
-                if (_galleryUrls.length < 6) {
-                  setState(
-                    () => _galleryUrls.add(
-                      'https://picsum.photos/seed/gallery-${DateTime.now().millisecond}/400/300',
-                    ),
-                  );
-                }
-              },
-              child: const Text('Depuis la galerie'),
-            ),
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(context);
-                if (_galleryUrls.length < 6) {
-                  setState(
-                    () => _galleryUrls.add(
-                      'https://picsum.photos/seed/camera-${DateTime.now().millisecond}/400/300',
-                    ),
-                  );
-                }
-              },
-              child: const Text('Prendre une photo'),
-            ),
-          ],
-        );
-      },
-    );
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles.isNotEmpty) {
+      setState(() {
+        for (var file in pickedFiles) {
+          if (_galleryFiles.length < 6) {
+            _galleryFiles.add(File(file.path));
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -380,26 +409,49 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                       const SizedBox(height: 12),
-                      Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.outlineVariant),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                      InkWell(
+                        onTap: _pickLocationOnMap,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colorScheme.outlineVariant),
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
                             children: [
-                              Icon(
-                                Icons.map_rounded,
-                                size: 32,
-                                color: colorScheme.onSurfaceVariant,
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.map_rounded, size: 32, color: Colors.grey.shade600),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Google Maps désactivé',
+                                        style: TextStyle(color: Colors.grey.shade700),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Mini-carte (mock)',
-                                style: Theme.of(context).textTheme.bodySmall,
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black45,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Appuyer pour simuler une position',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -481,7 +533,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                               style: BorderStyle.solid,
                             ),
                           ),
-                          child: _logoUrl == null
+                          child: _logoFile == null
                               ? Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -501,8 +553,8 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                                 )
                               : ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    _logoUrl!,
+                                  child: Image.file(
+                                    _logoFile!,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -515,7 +567,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 12),
-                      if (_galleryUrls.isNotEmpty)
+                      if (_galleryFiles.isNotEmpty)
                         GridView.count(
                           crossAxisCount: 3,
                           shrinkWrap: true,
@@ -523,14 +575,16 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
                           children: [
-                            ..._galleryUrls.map(
-                              (url) => Stack(
+                            ..._galleryFiles.map(
+                              (file) => Stack(
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      url,
+                                    child: Image.file(
+                                      file,
                                       fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
                                     ),
                                   ),
                                   Positioned(
@@ -539,7 +593,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                                     child: GestureDetector(
                                       onTap: () {
                                         setState(
-                                          () => _galleryUrls.remove(url),
+                                          () => _galleryFiles.remove(file),
                                         );
                                       },
                                       child: Container(
@@ -561,7 +615,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                                 ],
                               ),
                             ),
-                            if (_galleryUrls.length < 6)
+                            if (_galleryFiles.length < 6)
                               InkWell(
                                 onTap: _pickGalleryPhotos,
                                 borderRadius: BorderRadius.circular(12),
@@ -584,7 +638,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                               ),
                           ],
                         ),
-                      if (_galleryUrls.isEmpty)
+                      if (_galleryFiles.isEmpty)
                         InkWell(
                           onTap: _pickGalleryPhotos,
                           borderRadius: BorderRadius.circular(12),

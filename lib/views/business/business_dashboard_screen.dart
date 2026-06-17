@@ -56,40 +56,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
       _viewsData = [840, 920, 1050, 1100, 950];
     }
 
-    _recentReviews = [
-      ReviewModel(
-        id: 'review-rc-1',
-        businessId: 'biz-001',
-        userName: 'Miora R.',
-        userPhotoUrl: 'https://i.pravatar.cc/120?img=32',
-        rating: 5,
-        comment:
-            'Service impeccable, plats tres bien presentes et equipe vraiment attentive.',
-        photoUrls: const ['https://picsum.photos/seed/review-recent-1/320/240'],
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      ReviewModel(
-        id: 'review-rc-2',
-        businessId: 'biz-001',
-        userName: 'Tojo A.',
-        userPhotoUrl: 'https://i.pravatar.cc/120?img=12',
-        rating: 4.5,
-        comment: 'Tres belle adresse pour un diner calme.',
-        photoUrls: const [],
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      ReviewModel(
-        id: 'review-rc-3',
-        businessId: 'biz-001',
-        userName: 'Sarah N.',
-        userPhotoUrl: 'https://i.pravatar.cc/120?img=47',
-        rating: 5,
-        comment:
-            'Reservation facile, accueil chaleureux et excellente recommandation de menu.',
-        photoUrls: const [],
-        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
-      ),
-    ];
+    _recentReviews = [];
   }
 
   @override

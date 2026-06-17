@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "379161956081",
+    "project_id": "reviewapp-47568",
+    "storage_bucket": "reviewapp-47568.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379161956081:android:5c477d8758113ea736e350",
+        "android_client_info": {
+          "package_name": "com.example.review"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "379161956081-in6fucc9iikeu4q38il4r1fsr2ca2nga.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC10v96fTqX3901VKN14TVJumNLO9K8gAk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "379161956081-in6fucc9iikeu4q38il4r1fsr2ca2nga.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379161956081:android:8c34aad2922801b936e350",
+        "android_client_info": {
+          "package_name": "com.tsiferana.reviewapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "379161956081-in6fucc9iikeu4q38il4r1fsr2ca2nga.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC10v96fTqX3901VKN14TVJumNLO9K8gAk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "379161956081-in6fucc9iikeu4q38il4r1fsr2ca2nga.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

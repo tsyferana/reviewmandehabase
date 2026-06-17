@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import '../../models/business_model.dart';
 import '../../models/review_model.dart';
 import '../../services/maps_sim_service.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/supabase_data_service.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   const BusinessDetailScreen({super.key, this.businessId = 'biz-001'});
@@ -22,7 +22,7 @@ class BusinessDetailScreen extends StatefulWidget {
 }
 
 class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
-  final _mockDataService = MockDataService();
+  final _dataService = SupabaseDataService();
   final _mapsService = MapsSimService();
 
   BusinessModel? _business;
@@ -37,8 +37,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   }
 
   Future<void> _loadDetail() async {
-    final business = await _mockDataService.getBusinessById(widget.businessId);
-    final reviews = await _mockDataService.getReviewsForBusiness(
+    final business = await _dataService.getBusinessById(widget.businessId);
+    final reviews = await _dataService.getReviewsForBusiness(
       widget.businessId,
     );
 

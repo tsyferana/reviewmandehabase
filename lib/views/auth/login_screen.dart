@@ -38,6 +38,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       password: _passwordController.text.trim(),
     );
 
+    _onLoginFinished(success, authController);
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    final authController = ref.read(authControllerProvider);
+    final success = await authController.loginWithGoogle();
+    
+    _onLoginFinished(success, authController);
+  }
+
+  void _onLoginFinished(bool success, dynamic authController) {
     if (!mounted) return;
 
     if (success) {
@@ -58,7 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Une fois connecté, on redirige vers l'accueil
       context.go('/home');
     } else {
-      // Affichage de l'erreur retournée par Supabase
+      // Affichage de l'erreur
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authController.errorMessage ?? 'Erreur de connexion'),
@@ -147,6 +158,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text('Se connecter'),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : _handleGoogleLogin,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    icon: isLoading 
+                        ? const SizedBox.shrink()
+                        : const Icon(Icons.g_mobiledata, size: 32),
+                    label: const Text('Se connecter avec Google'),
                   ),
                   const SizedBox(height: 16),
                   TextButton(

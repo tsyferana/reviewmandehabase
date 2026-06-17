@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,9 +6,10 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
-import '../../repositories/user_repository.dart';
 import '../../repositories/auth_repository.dart';
+import '../../controllers/auth_providers.dart';
 import '../../routes/app_router.dart';
 
 // Provider global pour gérer le mode du thème (Clair, Sombre ou Système)
@@ -32,7 +34,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.initState();
     final user = Supabase.instance.client.auth.currentUser;
     _fullName = user?.userMetadata?['full_name'] ?? 'Utilisateur';
-    _photoUrl = null; // Initialement pas de photo (affiche les initiales)
+    _photoUrl = user?.userMetadata?['avatar_url'];
   }
 
   bool _notificationsEnabled = true;
@@ -49,10 +51,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _editProfile() {
     final nameController = TextEditingController(text: _fullName);
+    File? localImageFile;
+    bool isSaving = false;
+    String? errorMessage;
 
     showDialog<void>(
       context: context,
-      builder: (context) {
+      barrierDismissible: false,
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
@@ -63,25 +69,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     const SizedBox(height: 10),
                     InkWell(
-                      onTap: () {
-                        // Simulation de sélection d'image dans la galerie
-                        final mockUrl =
-                            'https://picsum.photos/seed/${DateTime.now().millisecond}/300/300';
-                        setDialogState(() => _photoUrl = mockUrl);
-                        setState(() => _photoUrl = mockUrl);
+                      onTap: isSaving ? null : () async {
+                        final picker = ImagePicker();
+                        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                        if (pickedFile != null) {
+                          setDialogState(() {
+                            localImageFile = File(pickedFile.path);
+                          });
+                        }
                       },
                       borderRadius: BorderRadius.circular(50),
                       child: Stack(
                         children: [
                           CircleAvatar(
                             radius: 46,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            backgroundImage: _photoUrl != null
-                                ? NetworkImage(_photoUrl!)
-                                : null,
-                            child: _photoUrl == null
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            backgroundImage: localImageFile != null
+                                ? FileImage(localImageFile!) as ImageProvider
+                                : (_photoUrl != null ? NetworkImage(_photoUrl!) : null),
+                            child: localImageFile == null && _photoUrl == null
                                 ? const Icon(Icons.person_rounded, size: 40)
                                 : null,
                           ),
@@ -90,9 +96,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             right: 0,
                             child: CircleAvatar(
                               radius: 16,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
+                              backgroundColor: Theme.of(context).colorScheme.primary,
                               child: const Icon(
                                 Icons.camera_alt_rounded,
                                 size: 16,
@@ -106,26 +110,75 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 24),
                     TextField(
                       controller: nameController,
+                      enabled: !isSaving,
                       decoration: const InputDecoration(
                         labelText: 'Nom d\'affichage',
                         prefixIcon: Icon(Icons.person_outline_rounded),
                         border: OutlineInputBorder(),
                       ),
                     ),
+                    if (errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        errorMessage!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: isSaving ? null : () => Navigator.pop(context),
                   child: const Text('Annuler'),
                 ),
                 FilledButton(
-                  onPressed: () {
-                    setState(() => _fullName = nameController.text);
-                    Navigator.pop(context);
+                  onPressed: isSaving ? null : () async {
+                    setDialogState(() {
+                      isSaving = true;
+                      errorMessage = null;
+                    });
+                    
+                    try {
+                      final success = await ref.read(authControllerProvider).updateProfile(
+                        fullName: nameController.text.trim(),
+                        imageFile: localImageFile,
+                      );
+                      
+                      if (success) {
+                        if (mounted) {
+                          final user = Supabase.instance.client.auth.currentUser;
+                          setState(() {
+                            _fullName = user?.userMetadata?['full_name'] ?? _fullName;
+                            _photoUrl = user?.userMetadata?['avatar_url'] ?? _photoUrl;
+                          });
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profil mis à jour avec succès'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } else {
+                        // Si succes est faux, c'est que l'authController a intercepté l'erreur
+                        final err = ref.read(authControllerProvider).errorMessage;
+                        setDialogState(() {
+                          isSaving = false;
+                          errorMessage = err ?? 'Erreur inconnue';
+                        });
+                      }
+                    } catch (e) {
+                      setDialogState(() {
+                        isSaving = false;
+                        errorMessage = e.toString();
+                      });
+                    }
                   },
-                  child: const Text('Enregistrer'),
+                  child: isSaving 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Enregistrer'),
                 ),
               ],
             );

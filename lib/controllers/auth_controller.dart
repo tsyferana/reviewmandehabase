@@ -1,5 +1,5 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import '../repositories/user_repository.dart'; // Pour MockAccountType
 import '../repositories/auth_repository.dart';
 
 class AuthController extends ChangeNotifier {
@@ -31,13 +31,32 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Tente de connecter l'utilisateur via Google et retourne un booléen en cas de succès
+  Future<bool> loginWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.signInWithGoogle();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Gère l'inscription d'un utilisateur
   Future<bool> register({
     required String fullName,
     required String email,
     required String phone,
     required String password,
-    required MockAccountType accountType,
+    required String accountType,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -49,9 +68,7 @@ class AuthController extends ChangeNotifier {
         password: password,
         fullName: fullName,
         phone: phone,
-        accountType: accountType == MockAccountType.businessOwner
-            ? 'business_owner'
-            : 'client',
+        accountType: accountType,
       );
       _isLoading = false;
       notifyListeners();
@@ -91,6 +108,28 @@ class AuthController extends ChangeNotifier {
 
     try {
       await _repository.updatePassword(newPassword);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Met à jour le profil utilisateur
+  Future<bool> updateProfile({
+    required String fullName,
+    File? imageFile,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.updateProfile(fullName: fullName, imageFile: imageFile);
       _isLoading = false;
       notifyListeners();
       return true;

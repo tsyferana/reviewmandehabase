@@ -2,6 +2,7 @@ class ReviewModel {
   const ReviewModel({
     required this.id,
     required this.businessId,
+    required this.userId,
     required this.userName,
     required this.userPhotoUrl,
     required this.rating,
@@ -13,6 +14,7 @@ class ReviewModel {
 
   final String id;
   final String businessId;
+  final String userId;
   final String userName;
   final String userPhotoUrl;
   final double rating;
@@ -24,6 +26,7 @@ class ReviewModel {
   ReviewModel copyWith({
     String? id,
     String? businessId,
+    String? userId,
     String? userName,
     String? userPhotoUrl,
     double? rating,
@@ -35,6 +38,7 @@ class ReviewModel {
     return ReviewModel(
       id: id ?? this.id,
       businessId: businessId ?? this.businessId,
+      userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       userPhotoUrl: userPhotoUrl ?? this.userPhotoUrl,
       rating: rating ?? this.rating,
@@ -45,31 +49,31 @@ class ReviewModel {
     );
   }
 
-  factory ReviewModel.fromJson(Map<String, dynamic> json) {
+  factory ReviewModel.fromJson(Map<String, dynamic> json, {String? currentUserId}) {
+    final profile = json['profiles'] as Map<String, dynamic>? ?? {};
+    final uId = json['user_id'] as String? ?? '';
     return ReviewModel(
       id: json['id'] as String,
-      businessId: json['businessId'] as String,
-      userName: json['userName'] as String,
-      userPhotoUrl: json['userPhotoUrl'] as String,
-      rating: (json['rating'] as num).toDouble(),
-      comment: json['comment'] as String,
-      photoUrls: List<String>.from(json['photoUrls'] as List<dynamic>),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      isCurrentUser: json['isCurrentUser'] as bool? ?? false,
+      businessId: json['business_id'] as String? ?? '',
+      userId: uId,
+      userName: profile['full_name'] as String? ?? 'Utilisateur',
+      userPhotoUrl: profile['avatar_url'] as String? ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      comment: json['comment'] as String? ?? '',
+      photoUrls: List<String>.from(json['photo_urls'] as List? ?? []),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      isCurrentUser: currentUserId != null && currentUserId == uId,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'businessId': businessId,
-      'userName': userName,
-      'userPhotoUrl': userPhotoUrl,
+      'business_id': businessId,
+      'user_id': userId,
       'rating': rating,
       'comment': comment,
-      'photoUrls': photoUrls,
-      'createdAt': createdAt.toIso8601String(),
-      'isCurrentUser': isCurrentUser,
+      'photo_urls': photoUrls,
     };
   }
 }

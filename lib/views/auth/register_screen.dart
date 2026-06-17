@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../controllers/auth_providers.dart';
 import '../../repositories/auth_repository.dart';
-import '../../repositories/user_repository.dart';
 import '../../routes/app_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -26,7 +25,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  MockAccountType _accountType = MockAccountType.client;
+  String _accountType = 'client';
   bool _acceptTerms = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -146,15 +145,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    SegmentedButton<MockAccountType>(
+                    SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(
-                          value: MockAccountType.client,
+                          value: 'client',
                           icon: Icon(Icons.person_outline_rounded),
                           label: Text('Client'),
                         ),
                         ButtonSegment(
-                          value: MockAccountType.businessOwner,
+                          value: 'business_owner',
                           icon: Icon(Icons.storefront_rounded),
                           label: Text('Proprietaire'),
                         ),
