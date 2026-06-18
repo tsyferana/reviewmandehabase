@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../services/supabase_data_service.dart';
 import '../../routes/app_router.dart';
 
 class CategoryManagementScreen extends ConsumerStatefulWidget {
@@ -17,7 +17,8 @@ class CategoryManagementScreen extends ConsumerStatefulWidget {
 
 class _CategoryManagementScreenState
     extends ConsumerState<CategoryManagementScreen> {
-  late List<_CategoryModel> _categories;
+  late List<_CategoryModel> _categories = [];
+  bool _isLoading = true;
 
   static final List<IconData> _availableIcons = [
     Icons.restaurant_rounded,
@@ -58,54 +59,29 @@ class _CategoryManagementScreenState
   @override
   void initState() {
     super.initState();
-    _initializeMockCategories();
+    _loadCategories();
   }
 
-  void _initializeMockCategories() {
-    _categories = [
-      _CategoryModel(
-        id: 'cat-001',
-        name: 'Restaurants',
-        icon: Icons.restaurant_rounded,
-        color: const Color(0xFFFF6B6B),
-        businessCount: 95,
-      ),
-      _CategoryModel(
-        id: 'cat-002',
-        name: 'Hôtels',
-        icon: Icons.hotel_rounded,
-        color: const Color(0xFF4ECDC4),
-        businessCount: 52,
-      ),
-      _CategoryModel(
-        id: 'cat-003',
-        name: 'Boutiques',
-        icon: Icons.shopping_bag_rounded,
-        color: const Color(0xFFFFE66D),
-        businessCount: 68,
-      ),
-      _CategoryModel(
-        id: 'cat-004',
-        name: 'Spas & Beauté',
-        icon: Icons.spa_rounded,
-        color: const Color(0xFF95E1D3),
-        businessCount: 34,
-      ),
-      _CategoryModel(
-        id: 'cat-005',
-        name: 'Transports',
-        icon: Icons.directions_car_rounded,
-        color: const Color(0xFFC7CEEA),
-        businessCount: 28,
-      ),
-      _CategoryModel(
-        id: 'cat-006',
-        name: 'Cafés',
-        icon: Icons.coffee_rounded,
-        color: const Color(0xFFFF8B94),
-        businessCount: 0,
-      ),
-    ];
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await SupabaseDataService().getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = cats.map((c) => _CategoryModel(
+            id: c.id,
+            name: c.name,
+            icon: c.icon,
+            color: _availableColors[c.name.length % _availableColors.length],
+            businessCount: 0,
+          )).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _showAddCategoryDialog() async {
@@ -240,19 +216,20 @@ class _CategoryManagementScreenState
     );
   }
 
-  void _addCategory(String name, IconData icon, Color color) {
-    final newCategory = _CategoryModel(
-      id: 'cat-${DateTime.now().millisecondsSinceEpoch}',
-      name: name,
-      icon: icon,
-      color: color,
-      businessCount: 0,
-    );
-    setState(() => _categories.add(newCategory));
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Catégorie "$name" ajoutée.')));
+  Future<void> _addCategory(String name, IconData icon, Color color) async {
+    setState(() => _isLoading = true);
+    try {
+      await SupabaseDataService().createCategoryAdmin(name, 'custom');
+      await _loadCategories();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Catégorie "$name" ajoutée.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de l\'ajout.')));
+      }
+    }
   }
 
   Future<void> _showEditCategoryDialog(_CategoryModel category) async {
@@ -392,21 +369,25 @@ class _CategoryManagementScreenState
     );
   }
 
-  void _editCategory(
+  Future<void> _editCategory(
     _CategoryModel category,
     String name,
     IconData icon,
     Color color,
-  ) {
-    setState(() {
-      category.name = name;
-      category.icon = icon;
-      category.color = color;
-    });
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Catégorie "$name" mise à jour.')));
+  ) async {
+    setState(() => _isLoading = true);
+    try {
+      await SupabaseDataService().updateCategoryAdmin(category.id, name, 'custom');
+      await _loadCategories();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Catégorie "$name" mise à jour.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de la mise à jour de la catégorie.')));
+      }
+    }
   }
 
   Future<void> _deleteCategory(_CategoryModel category) async {
@@ -448,13 +429,20 @@ class _CategoryManagementScreenState
     );
 
     if (confirmed == true) {
-      setState(() => _categories.removeWhere((c) => c.id == category.id));
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Catégorie "${category.name}" supprimée.')),
-      );
+      setState(() => _isLoading = true);
+      try {
+        await SupabaseDataService().deleteCategoryAdmin(category.id);
+        await _loadCategories();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Catégorie "${category.name}" supprimée.')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 
@@ -509,7 +497,9 @@ class _CategoryManagementScreenState
         onPressed: _showAddCategoryDialog,
         child: const Icon(Icons.add_rounded),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

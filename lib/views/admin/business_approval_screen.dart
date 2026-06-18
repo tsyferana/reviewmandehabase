@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../../services/supabase_data_service.dart';
 
 enum BusinessApprovalStatus { pending, approved, rejected }
 
@@ -16,13 +17,14 @@ class BusinessApprovalScreen extends StatefulWidget {
 class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  late List<_BusinessModel> _businesses;
+  late List<_BusinessModel> _businesses = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _initializeMockBusinesses();
+    _loadBusinesses();
   }
 
   @override
@@ -31,163 +33,44 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
     super.dispose();
   }
 
-  void _initializeMockBusinesses() {
-    _businesses = [
-      _BusinessModel(
-        id: 'biz-001',
-        name: 'La Varangue Restaurant',
-        category: 'Restaurants',
-        ownerName: 'Aina Rajaonarivelo',
-        ownerEmail: 'aina.r@gmail.com',
-        logo: 'https://picsum.photos/seed/reviewapp-restaurant/600/420',
-        description:
-            'Restaurant traditionnel malgache situé au cœur de la capitale. Nous proposons une cuisine authentique avec des plats à base de produits locaux frais.',
-        address: '125 Avenue de l\'Indépendance, Antananarivo',
-        phone: '+261 20 22 123 456',
-        email: 'contact@lavarangue.mg',
-        website: 'www.lavarangue.mg',
-        openingHours: {
-          'Lundi': '11:00 - 22:00',
-          'Mardi': '11:00 - 22:00',
-          'Mercredi': '11:00 - 22:00',
-          'Jeudi': '11:00 - 22:00',
-          'Vendredi': '11:00 - 23:00',
-          'Samedi': '12:00 - 23:00',
-          'Dimanche': '12:00 - 21:00',
-        },
-        photos: [
-          'https://picsum.photos/seed/restaurant-1/320/240',
-          'https://picsum.photos/seed/restaurant-2/320/240',
-          'https://picsum.photos/seed/restaurant-3/320/240',
-        ],
-        submittedAt: DateTime.now().subtract(const Duration(days: 5)),
-        status: BusinessApprovalStatus.pending,
-        rejectionReason: '',
-      ),
-      _BusinessModel(
-        id: 'biz-002',
-        name: 'Toile Café',
-        category: 'Cafés',
-        ownerName: 'Jean Ralibera',
-        ownerEmail: 'jean@toilecafe.mg',
-        logo: 'https://picsum.photos/seed/cafe-2/600/420',
-        description:
-            'Café contemporain avec wifi gratuit. Idéal pour travailler ou se détendre en dégustant nos spécialités café.',
-        address: '42 Rue de Soarano, Antananarivo',
-        phone: '+261 20 22 234 567',
-        email: 'contact@toilecafe.mg',
-        website: 'www.toilecafe.mg',
-        openingHours: {
-          'Lundi': '07:00 - 18:00',
-          'Mardi': '07:00 - 18:00',
-          'Mercredi': '07:00 - 18:00',
-          'Jeudi': '07:00 - 18:00',
-          'Vendredi': '07:00 - 19:00',
-          'Samedi': '08:00 - 19:00',
-          'Dimanche': 'Fermé',
-        },
-        photos: [
-          'https://picsum.photos/seed/cafe-1/320/240',
-          'https://picsum.photos/seed/cafe-3/320/240',
-        ],
-        submittedAt: DateTime.now().subtract(const Duration(days: 3)),
-        status: BusinessApprovalStatus.pending,
-        rejectionReason: '',
-      ),
-      _BusinessModel(
-        id: 'biz-003',
-        name: 'Madagascar Tours',
-        category: 'Tourisme',
-        ownerName: 'Sophie Nomena',
-        ownerEmail: 'sophie@madtours.mg',
-        logo: 'https://picsum.photos/seed/travel-1/600/420',
-        description:
-            'Agence de voyage spécialisée dans l\'exploration de Madagascar. Nous organisons des circuits touristiques uniques et personnalisés.',
-        address: '78 Boulevard de la Paix, Antananarivo',
-        phone: '+261 20 22 345 678',
-        email: 'bookings@madtours.mg',
-        website: 'www.madtours.mg',
-        openingHours: {
-          'Lundi': '08:00 - 17:00',
-          'Mardi': '08:00 - 17:00',
-          'Mercredi': '08:00 - 17:00',
-          'Jeudi': '08:00 - 17:00',
-          'Vendredi': '08:00 - 17:00',
-          'Samedi': '09:00 - 14:00',
-          'Dimanche': 'Fermé',
-        },
-        photos: [
-          'https://picsum.photos/seed/travel-2/320/240',
-          'https://picsum.photos/seed/travel-3/320/240',
-          'https://picsum.photos/seed/travel-4/320/240',
-        ],
-        submittedAt: DateTime.now().subtract(const Duration(days: 1)),
-        status: BusinessApprovalStatus.pending,
-        rejectionReason: '',
-      ),
-      _BusinessModel(
-        id: 'biz-004',
-        name: 'Hotel Paradise',
-        category: 'Hôtels',
-        ownerName: 'Marc Razafimandimby',
-        ownerEmail: 'marc@hotelparadise.mg',
-        logo: 'https://picsum.photos/seed/hotel-1/600/420',
-        description:
-            'Hôtel 4 étoiles avec vue sur la baie. Services de luxe et accueil personnalisé.',
-        address: '15 Rue de l\'Océan, Antananarivo',
-        phone: '+261 20 22 456 789',
-        email: 'reservations@hotelparadise.mg',
-        website: 'www.hotelparadise.mg',
-        openingHours: {
-          'Lundi': '00:00 - 23:59',
-          'Mardi': '00:00 - 23:59',
-          'Mercredi': '00:00 - 23:59',
-          'Jeudi': '00:00 - 23:59',
-          'Vendredi': '00:00 - 23:59',
-          'Samedi': '00:00 - 23:59',
-          'Dimanche': '00:00 - 23:59',
-        },
-        photos: [
-          'https://picsum.photos/seed/hotel-2/320/240',
-          'https://picsum.photos/seed/hotel-3/320/240',
-          'https://picsum.photos/seed/hotel-4/320/240',
-        ],
-        submittedAt: DateTime.now().subtract(const Duration(hours: 12)),
-        status: BusinessApprovalStatus.approved,
-        rejectionReason: '',
-      ),
-      _BusinessModel(
-        id: 'biz-005',
-        name: 'New Business Hub',
-        category: 'Services',
-        ownerName: 'Rakoto Jean',
-        ownerEmail: 'rakoto@businesshub.mg',
-        logo: 'https://picsum.photos/seed/business-1/600/420',
-        description:
-            'Centre d\'affaires moderne offrant espaces de coworking et services professionnels.',
-        address: '99 Avenue Royale, Antananarivo',
-        phone: '+261 20 22 567 890',
-        email: 'info@businesshub.mg',
-        website: 'www.businesshub.mg',
-        openingHours: {
-          'Lundi': '06:00 - 22:00',
-          'Mardi': '06:00 - 22:00',
-          'Mercredi': '06:00 - 22:00',
-          'Jeudi': '06:00 - 22:00',
-          'Vendredi': '06:00 - 22:00',
-          'Samedi': 'Fermé',
-          'Dimanche': 'Fermé',
-        },
-        photos: [
-          'https://picsum.photos/seed/business-2/320/240',
-          'https://picsum.photos/seed/business-3/320/240',
-        ],
-        submittedAt: DateTime.now().subtract(const Duration(days: 7)),
-        status: BusinessApprovalStatus.rejected,
-        rejectionReason:
-            'Informations de contact incomplètes. Veuillez fournir un numéro de téléphone valide.',
-      ),
-    ];
+  Future<void> _loadBusinesses() async {
+    try {
+      final businessesData = await SupabaseDataService().getAllBusinessesAdmin();
+      if (mounted) {
+        setState(() {
+          _businesses = businessesData.map((b) {
+            BusinessApprovalStatus parsedStatus;
+            switch(b['status']) {
+              case 'approved': parsedStatus = BusinessApprovalStatus.approved; break;
+              case 'rejected': parsedStatus = BusinessApprovalStatus.rejected; break;
+              default: parsedStatus = BusinessApprovalStatus.pending; break;
+            }
+            
+            return _BusinessModel(
+              id: b['id'] ?? '',
+              name: b['name'] ?? 'Sans Nom',
+              category: b['categories']?['name'] ?? 'Non classé',
+              ownerName: b['profiles']?['full_name'] ?? 'Inconnu',
+              ownerEmail: b['profiles']?['email'] ?? '',
+              logo: b['image_url'] ?? 'https://picsum.photos/seed/reviewapp-restaurant/600/420',
+              description: b['description'] ?? '',
+              address: b['address'] ?? '',
+              phone: b['phone'] ?? '',
+              email: b['email'] ?? '',
+              website: '',
+              openingHours: (b['opening_hours'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, v.toString())) ?? {},
+              photos: (b['gallery_urls'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+              submittedAt: b['created_at'] != null ? DateTime.parse(b['created_at']) : DateTime.now(),
+              status: parsedStatus,
+              rejectionReason: '',
+            );
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   List<_BusinessModel> _getBusinessesByStatus(BusinessApprovalStatus status) {
@@ -218,18 +101,21 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
     );
 
     if (confirmed == true) {
-      setState(() {
-        business.status = BusinessApprovalStatus.approved;
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${business.name} a été approuvée.'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      setState(() => _isLoading = true);
+      try {
+        await SupabaseDataService().updateBusinessStatusAdmin(business.id, 'approved');
+        await _loadBusinesses();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${business.name} a été approuvée.'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -278,19 +164,21 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
     );
 
     if (confirmed == true && controller.text.isNotEmpty) {
-      setState(() {
-        business.status = BusinessApprovalStatus.rejected;
-        business.rejectionReason = controller.text;
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${business.name} a été rejetée.'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      setState(() => _isLoading = true);
+      try {
+        await SupabaseDataService().updateBusinessStatusAdmin(business.id, 'rejected'); // NOTE: backend currently doesn't store reason
+        await _loadBusinesses();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${business.name} a été rejetée.'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -583,7 +471,9 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
           ],
         ),
       ),
-      body: TabBarView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : TabBarView(
         controller: _tabController,
         children: [
           _buildBusinessList(BusinessApprovalStatus.pending),

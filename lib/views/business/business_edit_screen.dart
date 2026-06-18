@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/category_model.dart';
@@ -26,8 +28,10 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
   late Future<List<CategoryModel>> _categoriesFuture;
   int _currentStep = 0;
   bool _isSubmitting = false;
+  bool _isLoading = true;
+  String? _businessId;
 
-  // Step 1: General info (pre-filled mock data)
+  // Step 1: General info
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   CategoryModel? _selectedCategory;
@@ -55,36 +59,64 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
   };
 
   // Step 5: Services
-  final List<Map<String, String>> _services = [
-    {'name': 'Terrasse', 'price': '0'},
-    {'name': 'Climatisation', 'price': '0'},
-    {'name': 'Parking', 'price': '5000'},
-  ];
+  List<Map<String, String>> _services = [];
 
   @override
   void initState() {
     super.initState();
-    _initializeWithMockData();
+    _nameController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _addressController = TextEditingController();
+    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
+    
     _categoriesFuture = SupabaseDataService().getCategories();
+    _loadData();
   }
 
-  void _initializeWithMockData() {
-    // Pre-fill with mock data from "La Varangue" business
-    _nameController = TextEditingController(text: 'La Varangue');
-    _descriptionController = TextEditingController(
-      text:
-          'Une adresse locale apprécié pour son accueil, la qualité du service et son ambiance soignée. Réservation facile, accueil chaleureux et excellente recommandation de menu.',
-    );
-    _addressController = TextEditingController(
-      text: 'Analakely, 101 Antananarivo, Madagascar',
-    );
-    _phoneController = TextEditingController(text: '+261 34 00 000 00');
-    _emailController = TextEditingController(text: 'contact@lavarangue.mg');
-    _logoUrl = 'https://picsum.photos/seed/reviewapp-restaurant/600/420';
-    _galleryUrls = [
-      'https://picsum.photos/seed/gallery-restaurant-1/400/300',
-      'https://picsum.photos/seed/gallery-restaurant-2/400/300',
-    ];
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final biz = await SupabaseDataService().getUserBusiness();
+      if (biz != null) {
+        _businessId = biz['id'];
+        _nameController.text = biz['name'] ?? '';
+        _descriptionController.text = biz['description'] ?? '';
+        _addressController.text = biz['address'] ?? '';
+        _phoneController.text = biz['phone'] ?? '';
+        _emailController.text = biz['email'] ?? '';
+        _logoUrl = biz['image_url'];
+        
+        if (biz['gallery_urls'] != null) {
+          _galleryUrls = List<String>.from(biz['gallery_urls']);
+        }
+        
+        final cats = await _categoriesFuture;
+        if (biz['category_id'] != null) {
+          try {
+            _selectedCategory = cats.firstWhere((c) => c.id == biz['category_id']);
+          } catch (_) {}
+        }
+        
+        if (biz['opening_hours'] != null) {
+           final Map<String, dynamic> oh = biz['opening_hours'];
+           for (var key in oh.keys) {
+             if (_openingHours.containsKey(key)) {
+               _openingHours[key] = Map<String, dynamic>.from(oh[key]);
+             }
+           }
+        }
+        
+        if (biz['services'] != null) {
+           final List<dynamic> srvs = biz['services'];
+           _services = srvs.map((e) => Map<String, String>.from(e)).toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -118,10 +150,24 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
   }
 
   Future<void> _saveChanges() async {
+    if (_businessId == null) return;
     setState(() => _isSubmitting = true);
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      final updates = {
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'address': _addressController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'email': _emailController.text.trim(),
+        'category_id': _selectedCategory?.id,
+        'image_url': _logoUrl,
+        'gallery_urls': _galleryUrls,
+        'opening_hours': _openingHours,
+        'services': _services,
+      };
+
+      await SupabaseDataService().updateBusiness(_businessId!, updates);
 
       if (!mounted) return;
 
@@ -132,7 +178,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
         ),
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
         context.go('/business/dashboard');
@@ -231,6 +277,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
   }
 
   Future<void> _pickLogo() async {
+    final picker = ImagePicker();
     await showDialog<void>(
       context: context,
       builder: (context) {
@@ -240,17 +287,14 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
             SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(context);
-                setState(
-                  () => _logoUrl =
-                      'https://picsum.photos/seed/logo-${DateTime.now().millisecond}/300/300',
-                );
+                _uploadLogo(picker, ImageSource.gallery);
               },
               child: const Text('Depuis la galerie'),
             ),
             SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(context);
-                setState(() => _logoUrl = 'https://i.pravatar.cc/300');
+                _uploadLogo(picker, ImageSource.camera);
               },
               child: const Text('Prendre une photo'),
             ),
@@ -260,7 +304,25 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
     );
   }
 
+  Future<void> _uploadLogo(ImagePicker picker, ImageSource source) async {
+    try {
+      final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
+      if (pickedFile != null) {
+        setState(() => _isSubmitting = true);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Téléchargement du logo en cours...')));
+        final url = await SupabaseDataService().uploadBusinessImage(File(pickedFile.path), 'logo');
+        setState(() => _logoUrl = url);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logo mis à jour !')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   Future<void> _pickGalleryPhotos() async {
+    final picker = ImagePicker();
     await showDialog<void>(
       context: context,
       builder: (context) {
@@ -270,26 +332,14 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
             SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(context);
-                if (_galleryUrls.length < 6) {
-                  setState(
-                    () => _galleryUrls.add(
-                      'https://picsum.photos/seed/gallery-${DateTime.now().millisecond}/400/300',
-                    ),
-                  );
-                }
+                _uploadGalleryPhoto(picker, ImageSource.gallery);
               },
               child: const Text('Depuis la galerie'),
             ),
             SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(context);
-                if (_galleryUrls.length < 6) {
-                  setState(
-                    () => _galleryUrls.add(
-                      'https://picsum.photos/seed/camera-${DateTime.now().millisecond}/400/300',
-                    ),
-                  );
-                }
+                _uploadGalleryPhoto(picker, ImageSource.camera);
               },
               child: const Text('Prendre une photo'),
             ),
@@ -297,6 +347,24 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
         );
       },
     );
+  }
+
+  Future<void> _uploadGalleryPhoto(ImagePicker picker, ImageSource source) async {
+    if (_galleryUrls.length >= 6) return;
+    try {
+      final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
+      if (pickedFile != null) {
+        setState(() => _isSubmitting = true);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Téléchargement de la photo...')));
+        final url = await SupabaseDataService().uploadBusinessImage(File(pickedFile.path), 'gallery');
+        setState(() => _galleryUrls.add(url));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photo ajoutée !')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _addService() {
@@ -422,7 +490,9 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
         title: const Text('Modifier l\'entreprise'),
         centerTitle: false,
       ),
-      body: PopScope(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : PopScope(
         canPop: _currentStep == 0,
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;

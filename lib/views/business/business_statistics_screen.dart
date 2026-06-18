@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import '../../services/supabase_data_service.dart';
 
 class BusinessStatisticsScreen extends StatefulWidget {
   const BusinessStatisticsScreen({super.key});
@@ -22,228 +26,190 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
 
   // Summary stats
   late Map<int, _SummaryStats> _summaryStats;
+  
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _initializeMockData();
+    _loadRealData();
   }
 
   void _initializeMockData() {
-    _viewsData = {
-      7: [120, 180, 150, 220, 280, 350, 280],
-      30: [
-        850,
-        920,
-        780,
-        1050,
-        1100,
-        950,
-        1200,
-        880,
-        1050,
-        1100,
-        950,
-        1200,
-        880,
-        1050,
-        1100,
-        950,
-        1200,
-        880,
-        1050,
-        1100,
-        950,
-        1200,
-        880,
-        1050,
-        1100,
-        950,
-        1200,
-        880,
-        1050,
-        1100,
-        950,
-      ],
-      90: [
-        5200,
-        5800,
-        5100,
-        6200,
-        6500,
-        5800,
-        6200,
-        5100,
-        6200,
-        6500,
-        5800,
-        6200,
-        5100,
-      ],
-      365: [
-        18200,
-        19500,
-        17800,
-        21500,
-        22100,
-        19800,
-        21500,
-        20200,
-        19800,
-        21500,
-        22100,
-        19800,
-      ],
-    };
-
-    _reviewsData = {
-      7: [8, 12, 10, 15, 18, 22, 19],
-      30: [
-        55,
-        62,
-        48,
-        70,
-        75,
-        64,
-        82,
-        58,
-        70,
-        75,
-        64,
-        82,
-        58,
-        70,
-        75,
-        64,
-        82,
-        58,
-        70,
-        75,
-        64,
-        82,
-        58,
-        70,
-        75,
-        64,
-        82,
-        58,
-        70,
-        75,
-      ],
-      90: [285, 325, 275, 350, 385, 325, 360, 285, 325, 275, 350, 385, 325],
-      365: [
-        1250,
-        1380,
-        1180,
-        1520,
-        1650,
-        1420,
-        1580,
-        1320,
-        1450,
-        1280,
-        1520,
-        1680,
-      ],
-    };
-
     _daysLabels = {
       7: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
       30: List.generate(30, (i) => '${i + 1}'),
       90: List.generate(13, (i) => 'S${i + 1}'),
-      365: [
-        'Jan',
-        'Fev',
-        'Mar',
-        'Avr',
-        'Mai',
-        'Jui',
-        'Juil',
-        'Aou',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ],
+      365: ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jui', 'Juil', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'],
     };
 
-    _trafficSources = {
-      7: {'Recherche': 45, 'Carte': 30, 'Recommandations': 20, 'Direct': 5},
-      30: {'Recherche': 48, 'Carte': 28, 'Recommandations': 18, 'Direct': 6},
-      90: {'Recherche': 50, 'Carte': 25, 'Recommandations': 20, 'Direct': 5},
-      365: {'Recherche': 52, 'Carte': 23, 'Recommandations': 19, 'Direct': 6},
+    _viewsData = { 7: List.filled(7, 0), 30: List.filled(30, 0), 90: List.filled(13, 0), 365: List.filled(12, 0) };
+    _reviewsData = { 7: List.filled(7, 0), 30: List.filled(30, 0), 90: List.filled(13, 0), 365: List.filled(12, 0) };
+    
+    _trafficSources = { 
+      7: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0}, 
+      30: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0}, 
+      90: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0}, 
+      365: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0} 
+    };
+    
+    _ratingDistribution = { 
+      7: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 
+      30: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 
+      90: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 
+      365: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0} 
     };
 
-    _ratingDistribution = {
-      7: {1: 1, 2: 2, 3: 8, 4: 18, 5: 15},
-      30: {1: 4, 2: 8, 3: 24, 4: 52, 5: 40},
-      90: {1: 8, 2: 18, 3: 65, 4: 145, 5: 149},
-      365: {1: 28, 2: 62, 3: 250, 4: 580, 5: 630},
-    };
+    final zeroStats = _SummaryStats(totalViews: 0, totalReviews: 0, averageRating: 0.0, conversionRate: 0.0);
+    _summaryStats = { 7: zeroStats, 30: zeroStats, 90: zeroStats, 365: zeroStats };
+  }
 
-    _summaryStats = {
-      7: _SummaryStats(
-        totalViews: 1580,
-        totalReviews: 84,
-        averageRating: 4.7,
-        conversionRate: 5.3,
-      ),
-      30: _SummaryStats(
-        totalViews: 7460,
-        totalReviews: 423,
-        averageRating: 4.6,
-        conversionRate: 5.7,
-      ),
-      90: _SummaryStats(
-        totalViews: 23450,
-        totalReviews: 1385,
-        averageRating: 4.65,
-        conversionRate: 5.9,
-      ),
-      365: _SummaryStats(
-        totalViews: 95200,
-        totalReviews: 5880,
-        averageRating: 4.68,
-        conversionRate: 6.2,
-      ),
-    };
+  Future<void> _loadRealData() async {
+    try {
+      final biz = await SupabaseDataService().getUserBusiness();
+      if (biz == null) return;
+      
+      final reviews = await SupabaseDataService().getBusinessReviews(biz['id']);
+      
+      int totalReviews = reviews.length;
+      double sum = 0;
+      Map<int, int> distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+      
+      for (var r in reviews) {
+        final rating = (r['rating'] as num).toInt();
+        sum += rating;
+        if (distribution.containsKey(rating)) {
+          distribution[rating] = distribution[rating]! + 1;
+        }
+      }
+      
+      double avg = totalReviews > 0 ? sum / totalReviews : 0;
+      
+      // Update data for all periods (since we don't have date filtering yet)
+      setState(() {
+        for (var period in [7, 30, 90, 365]) {
+          _ratingDistribution[period] = Map.from(distribution);
+          _summaryStats[period] = _SummaryStats(
+            totalViews: 0, // No views table yet
+            totalReviews: totalReviews,
+            averageRating: avg,
+            conversionRate: 0.0,
+          );
+          
+          // Zero out mock charts
+          _viewsData[period] = List.filled(_viewsData[period]!.length, 0);
+          _reviewsData[period] = List.filled(_reviewsData[period]!.length, 0);
+          
+          // Put today's reviews in the last day of the chart just as an example
+          if (totalReviews > 0 && _reviewsData[period]!.isNotEmpty) {
+            _reviewsData[period]![_reviewsData[period]!.length - 1] = totalReviews;
+          }
+          
+          _trafficSources[period] = {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0};
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading stats: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _exportPDF() async {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          icon: const Icon(Icons.file_download_rounded),
-          title: const Text('Exporter en PDF'),
-          content: const Text(
-            'Téléchargement du rapport détaillé des statistiques en cours...',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PDF exporté avec succès !'),
-                    duration: Duration(seconds: 2),
-                  ),
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   const SnackBar(content: Text('Préparation du PDF...')),
+    // );
+
+    final pdf = pw.Document();
+    final stats = _summaryStats[_selectedPeriod]!;
+    
+    String periodText = '';
+    switch (_selectedPeriod) {
+      case 7: periodText = '7 jours'; break;
+      case 30: periodText = '30 jours'; break;
+      case 90: periodText = '3 mois'; break;
+      case 365: periodText = '1 an'; break;
+    }
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Header(
+                level: 0,
+                child: pw.Text('Rapport Statistique de l\'Entreprise', 
+                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Période analysée : $periodText', style: const pw.TextStyle(fontSize: 16)),
+              pw.SizedBox(height: 30),
+              
+              pw.Text('Résumé', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Divider(),
+              pw.SizedBox(height: 10),
+              
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Avis Totaux : ${stats.totalReviews}'),
+                  pw.Text('Note Moyenne : ${stats.averageRating.toStringAsFixed(2)} / 5'),
+                ]
+              ),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Vues Totales : ${stats.totalViews}'),
+                  pw.Text('Conversion Favoris : ${stats.conversionRate.toStringAsFixed(1)}%'),
+                ]
+              ),
+              pw.SizedBox(height: 30),
+              
+              pw.Text('Répartition des notes', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Divider(),
+              pw.SizedBox(height: 10),
+              
+              ...[5,4,3,2,1].map((rating) {
+                final count = _ratingDistribution[_selectedPeriod]![rating] ?? 0;
+                final total = _ratingDistribution[_selectedPeriod]!.values.fold<int>(0, (a, b) => a + b);
+                final percentage = total > 0 ? (count / total * 100).toStringAsFixed(1) : '0.0';
+                
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 8),
+                  child: pw.Row(
+                    children: [
+                      pw.Text('$rating étoiles : ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text('$count avis ($percentage%)'),
+                    ]
+                  )
                 );
-              },
-              child: const Text('Télécharger'),
-            ),
-          ],
-        );
-      },
+              }),
+              
+              pw.SizedBox(height: 30),
+              pw.Text('Généré par ReviewApp', style: const pw.TextStyle(color: PdfColors.grey)),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'rapport_statistiques.pdf',
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final stats = _summaryStats[_selectedPeriod]!;

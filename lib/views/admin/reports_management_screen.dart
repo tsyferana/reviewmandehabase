@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../../services/supabase_data_service.dart';
 
 enum ReportType { falseReview, spam, offensive, incorrectInfo }
 
@@ -20,146 +21,57 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
   ReportType? _selectedType;
   ReportStatus? _selectedStatus;
 
-  late List<_ReportModel> _reports;
-  late List<_ReportModel> _filteredReports;
+  late List<_ReportModel> _reports = [];
+  late List<_ReportModel> _filteredReports = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeMockReports();
+    _loadReports();
   }
 
-  void _initializeMockReports() {
-    _reports = [
-      _ReportModel(
-        id: 'report-001',
-        reviewId: 'review-001',
-        reviewerName: 'Sarah N.',
-        reviewerAvatar: 'https://i.pravatar.cc/120?img=47',
-        businessName: 'La Varangue',
-        businessLogo: 'https://picsum.photos/seed/reviewapp-restaurant/600/420',
-        reviewText:
-            'Service impeccable, plats très bien présentés et équipe vraiment attentive. Une vraie expérience gastronomique!',
-        reviewRating: 5.0,
-        reviewDate: DateTime.now().subtract(const Duration(days: 5)),
-        reporterName: 'Marc R.',
-        reporterAvatar: 'https://i.pravatar.cc/120?img=30',
-        reporterEmail: 'marc.r@email.com',
-        reportType: ReportType.spam,
-        reason:
-            'Cet avis provient d\'un compte frauduleux. Plusieurs avis identiques d\'autres restaurants.',
-        reportedAt: DateTime.now().subtract(const Duration(days: 2)),
-        status: ReportStatus.pending,
-        reporterHistory: ['report-002', 'report-003'],
-      ),
-      _ReportModel(
-        id: 'report-002',
-        reviewId: 'review-002',
-        reviewerName: 'Jean R.',
-        reviewerAvatar: 'https://i.pravatar.cc/120?img=12',
-        businessName: 'Toile Café',
-        businessLogo: 'https://picsum.photos/seed/cafe-2/600/420',
-        reviewText:
-            'Pire café jamais visité. Service nul et café froid. Dégoûtant!',
-        reviewRating: 1.0,
-        reviewDate: DateTime.now().subtract(const Duration(days: 3)),
-        reporterName: 'Sophie N.',
-        reporterAvatar: 'https://i.pravatar.cc/120?img=41',
-        reporterEmail: 'sophie.n@email.com',
-        reportType: ReportType.offensive,
-        reason:
-            'Langage agressif et insultes envers le personnel. Propos offensants.',
-        reportedAt: DateTime.now().subtract(const Duration(days: 1)),
-        status: ReportStatus.pending,
-        reporterHistory: [],
-      ),
-      _ReportModel(
-        id: 'report-003',
-        reviewId: 'review-003',
-        reviewerName: 'Tojo A.',
-        reviewerAvatar: 'https://i.pravatar.cc/120?img=22',
-        businessName: 'Madagascar Tours',
-        businessLogo: 'https://picsum.photos/seed/travel-1/600/420',
-        reviewText:
-            'Très belle adresse. Bon accueil mais prix élevés par rapport aux concurrents.',
-        reviewRating: 3.5,
-        reviewDate: DateTime.now().subtract(const Duration(days: 7)),
-        reporterName: 'Nicole B.',
-        reporterAvatar: 'https://i.pravatar.cc/120?img=55',
-        reporterEmail: 'nicole.b@email.com',
-        reportType: ReportType.incorrectInfo,
-        reason:
-            'Les informations sur les prix ne correspondent pas aux tarifs actuels (2025).',
-        reportedAt: DateTime.now().subtract(const Duration(hours: 18)),
-        status: ReportStatus.pending,
-        reporterHistory: [],
-      ),
-      _ReportModel(
-        id: 'report-004',
-        reviewId: 'review-004',
-        reviewerName: 'Miora R.',
-        reviewerAvatar: 'https://i.pravatar.cc/120?img=32',
-        businessName: 'Hotel Paradise',
-        businessLogo: 'https://picsum.photos/seed/hotel-1/600/420',
-        reviewText:
-            'Chambre pas propre, personnel impoli, pas de service en chambre comme promis. Une déception complète.',
-        reviewRating: 1.0,
-        reviewDate: DateTime.now().subtract(const Duration(days: 10)),
-        reporterName: 'Admin Review',
-        reporterAvatar: 'https://i.pravatar.cc/120?img=1',
-        reporterEmail: 'admin@reviewapp.mg',
-        reportType: ReportType.falseReview,
-        reason:
-            'Avis manifestement faux. Le client n\'a jamais séjourné à l\'hôtel (vérification booking).',
-        reportedAt: DateTime.now().subtract(const Duration(days: 8)),
-        status: ReportStatus.handled,
-        reporterHistory: [],
-      ),
-      _ReportModel(
-        id: 'report-005',
-        reviewId: 'review-005',
-        reviewerName: 'Rakoto J.',
-        reviewerAvatar: 'https://i.pravatar.cc/120?img=5',
-        businessName: 'Boutique Chic',
-        businessLogo: 'https://picsum.photos/seed/business-1/600/420',
-        reviewText:
-            'Bonne sélection de vêtements. Prix un peu élevés mais qualité au rendez-vous.',
-        reviewRating: 4.0,
-        reviewDate: DateTime.now().subtract(const Duration(days: 6)),
-        reporterName: 'Vicky R.',
-        reporterAvatar: 'https://i.pravatar.cc/120?img=16',
-        reporterEmail: 'vicky.r@email.com',
-        reportType: ReportType.spam,
-        reason:
-            'Compte créé aujourd\'hui, déjà 5 avis postés. Activité suspecte.',
-        reportedAt: DateTime.now().subtract(const Duration(hours: 3)),
-        status: ReportStatus.pending,
-        reporterHistory: ['report-005'],
-      ),
-      _ReportModel(
-        id: 'report-006',
-        reviewId: 'review-006',
-        reviewerName: 'Emma A.',
-        reviewerAvatar: 'https://i.pravatar.cc/120?img=55',
-        businessName: 'Restaurant Belle Vue',
-        businessLogo: 'https://picsum.photos/seed/business-3/600/420',
-        reviewText:
-            'Service excellent! Plats délicieux et atmosphère agréable. À recommander!',
-        reviewRating: 5.0,
-        reviewDate: DateTime.now().subtract(const Duration(days: 12)),
-        reporterName: 'Pierre R.',
-        reporterAvatar: 'https://i.pravatar.cc/120?img=28',
-        reporterEmail: 'pierre.r@email.com',
-        reportType: ReportType.offensive,
-        reason:
-            'Contient des références à d\'autres restaurants de manière dégradante.',
-        reportedAt: DateTime.now().subtract(const Duration(days: 4)),
-        status: ReportStatus.handled,
-        reporterHistory: [],
-      ),
-    ];
-
-    _filterReports();
+  Future<void> _loadReports() async {
+    try {
+      final reportsData = await SupabaseDataService().getAllReportsAdmin();
+      if (mounted) {
+        setState(() {
+          _reports = reportsData.map((r) {
+            ReportType pType;
+            switch(r['report_type']) {
+              case 'false_review': pType = ReportType.falseReview; break;
+              case 'spam': pType = ReportType.spam; break;
+              case 'offensive': pType = ReportType.offensive; break;
+              case 'incorrect_info': pType = ReportType.incorrectInfo; break;
+              default: pType = ReportType.spam;
+            }
+            return _ReportModel(
+              id: r['id'] ?? '',
+              reviewId: r['review_id'] ?? '',
+              reviewerName: r['reviews']?['profiles']?['full_name'] ?? 'Inconnu',
+              reviewerAvatar: r['reviews']?['profiles']?['avatar_url'] ?? 'https://i.pravatar.cc/120',
+              businessName: r['reviews']?['businesses']?['name'] ?? 'Inconnu',
+              businessLogo: r['reviews']?['businesses']?['image_url'] ?? 'https://picsum.photos/600/420',
+              reviewText: r['reviews']?['comment'] ?? '',
+              reviewRating: (r['reviews']?['rating'] ?? 0).toDouble(),
+              reviewDate: r['reviews']?['created_at'] != null ? DateTime.parse(r['reviews']['created_at']) : DateTime.now(),
+              reporterName: r['profiles']?['full_name'] ?? 'Inconnu',
+              reporterAvatar: r['profiles']?['avatar_url'] ?? 'https://i.pravatar.cc/120',
+              reporterEmail: r['profiles']?['email'] ?? '',
+              reportType: pType,
+              reason: r['reason'] ?? '',
+              reportedAt: r['created_at'] != null ? DateTime.parse(r['created_at']) : DateTime.now(),
+              status: r['status'] == 'handled' ? ReportStatus.handled : ReportStatus.pending,
+              reporterHistory: [],
+            );
+          }).toList();
+          _filterReports();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _filterReports() {
@@ -229,19 +141,22 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
     );
 
     if (confirmed == true) {
-      setState(() {
-        _reports.removeWhere((r) => r.id == report.id);
-        _filterReports();
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Avis supprimé avec succès.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      setState(() => _isLoading = true);
+      try {
+        await SupabaseDataService().deleteReviewAdmin(report.reviewId);
+        await SupabaseDataService().updateReportStatusAdmin(report.id, 'handled');
+        await _loadReports();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Avis supprimé avec succès.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -269,19 +184,21 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
     );
 
     if (confirmed == true) {
-      setState(() {
-        report.status = ReportStatus.handled;
-        _filterReports();
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Signalement marqué comme traité.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      setState(() => _isLoading = true);
+      try {
+        await SupabaseDataService().updateReportStatusAdmin(report.id, 'handled');
+        await _loadReports();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Signalement marqué comme traité.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -309,19 +226,21 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
     );
 
     if (confirmed == true) {
-      setState(() {
-        report.status = ReportStatus.handled;
-        _filterReports();
-      });
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Avertissement envoyé à ${report.reviewerName}.'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      setState(() => _isLoading = true);
+      try {
+        await SupabaseDataService().updateReportStatusAdmin(report.id, 'handled');
+        await _loadReports();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Avertissement envoyé à ${report.reviewerName}.'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -657,7 +576,9 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
             const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

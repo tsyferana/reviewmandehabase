@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../controllers/review_controller.dart';
 import '../../models/review_model.dart';
 import '../../repositories/review_repository.dart';
+import '../../services/supabase_data_service.dart';
 
 enum ReviewFilterOption { all, unanswered, answered, reported }
 
@@ -36,11 +37,19 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
     super.initState();
     _reviewController = ReviewController(ReviewRepository());
     _reviewController.addListener(_onReviewsChanged);
-    unawaited(_reviewController.loadReviews('biz-001'));
+    _loadRealReviews();
+  }
 
-    // Mock business responses
-    _businessResponses['review-001'] =
-        'Merci beaucoup pour cet avis ! Nous avons noté votre retour sur le service de notre equipe.';
+  Future<void> _loadRealReviews() async {
+    try {
+      // Need to import SupabaseDataService
+      final biz = await SupabaseDataService().getUserBusiness();
+      if (biz != null && mounted) {
+        await _reviewController.loadReviews(biz['id']);
+      }
+    } catch (e) {
+      debugPrint('Error loading real reviews: $e');
+    }
   }
 
   @override

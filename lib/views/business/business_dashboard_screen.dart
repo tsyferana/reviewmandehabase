@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/review_model.dart';
+import '../../services/supabase_data_service.dart';
 
 class BusinessDashboardScreen extends StatefulWidget {
   const BusinessDashboardScreen({super.key});
@@ -18,36 +19,34 @@ class BusinessDashboardScreen extends StatefulWidget {
 class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
   int _selectedTimePeriod = 7; // 7 or 30 days
 
-  // Mock data
-  final String _businessName = 'La Varangue';
-  final String _businessLogo =
-      'https://picsum.photos/seed/reviewapp-restaurant/600/420';
-  final bool _isActive = true;
+  bool _isLoading = true;
+  Map<String, dynamic>? _business;
 
-  final int _totalViews = 2847;
-  final int _totalReviews = 128;
-  final int _totalFavorites = 456;
-  final double _averageRating = 4.8;
-  final int _visitorsThisMonth = 1023;
-  final double _growthPercentage = 12.5; // Positive = up
+  int _totalViews = 0;
+  int _totalReviews = 0;
+  int _totalFavorites = 0;
+  double _averageRating = 0.0;
+  int _visitorsThisMonth = 0;
+  double _growthPercentage = 0.0; 
 
   // Mock chart data (views evolution over 7/30 days)
   late List<int> _viewsData;
   late List<String> _daysLabels;
 
-  // Mock review distribution (1-5 stars)
-  final Map<int, int> _ratingDistribution = {1: 4, 2: 8, 3: 24, 4: 52, 5: 40};
+  // Real review distribution (1-5 stars)
+  Map<int, int> _ratingDistribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
 
-  // Mock recent reviews
-  late List<ReviewModel> _recentReviews;
+  // Recent reviews
+  List<ReviewModel> _recentReviews = [];
 
   @override
   void initState() {
     super.initState();
-    _initializeMockData();
+    _loadData();
+    _updateChartData(); // Keep mock chart for now
   }
 
-  void _initializeMockData() {
+  void _updateChartData() {
     if (_selectedTimePeriod == 7) {
       _daysLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
       _viewsData = [120, 180, 150, 220, 280, 350, 280];
@@ -55,12 +54,68 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
       _daysLabels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5'];
       _viewsData = [840, 920, 1050, 1100, 950];
     }
+  }
 
-    _recentReviews = [];
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final biz = await SupabaseDataService().getUserBusiness();
+      if (biz != null) {
+        _business = biz;
+        final reviews = await SupabaseDataService().getBusinessReviews(biz['id']);
+        
+        _totalReviews = reviews.length;
+        if (reviews.isNotEmpty) {
+          double sum = 0;
+          _ratingDistribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+          
+          for (var r in reviews) {
+            final rating = r['rating'] as num;
+            sum += rating;
+            final intRating = rating.round();
+            if (_ratingDistribution.containsKey(intRating)) {
+              _ratingDistribution[intRating] = _ratingDistribution[intRating]! + 1;
+            }
+          }
+          _averageRating = sum / reviews.length;
+          
+          _recentReviews = reviews.take(5).map((r) => ReviewModel(
+            id: r['id'],
+            businessId: r['business_id'],
+            userId: r['user_id'],
+            rating: (r['rating'] as num).toDouble(),
+            comment: r['comment'] ?? '',
+            createdAt: DateTime.parse(r['created_at']),
+            userName: r['profiles']?['full_name'] ?? 'Utilisateur',
+            userPhotoUrl: r['profiles']?['avatar_url'],
+            photoUrls: const [],
+          )).toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading business: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
+    if (_business == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Erreur')),
+        body: const Center(child: Text('Impossible de charger votre entreprise.')),
+      );
+    }
+
+    final String businessName = _business!['name'] ?? 'Mon entreprise';
+    final String businessLogo = _business!['image_url'] ?? 'https://picsum.photos/seed/reviewapp-restaurant/600/420';
+    final bool isActive = _business!['status'] == 'approved';
+
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -89,10 +144,38 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
             ],
           ),
           actions: [
-            IconButton(
-              tooltip: 'Paramètres',
-              onPressed: () {},
-              icon: const Icon(Icons.settings_rounded),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded),
+              tooltip: 'Options',
+              onSelected: (value) async {
+                if (value == 'switch_client') {
+                  // Revenir en mode client
+                  await SupabaseDataService().updateAccountType('client');
+                  if (context.mounted) {
+                    context.go('/home');
+                  }
+                } else if (value == 'settings') {
+                  context.push('/business/edit');
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: ListTile(
+                    leading: Icon(Icons.settings_rounded),
+                    title: Text('Paramètres'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'switch_client',
+                  child: ListTile(
+                    leading: Icon(Icons.person_rounded),
+                    title: Text('Passer en mode client'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 8),
           ],
@@ -116,10 +199,16 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                _businessLogo,
+                                businessLogo,
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: colorScheme.surfaceContainerHighest,
+                                  child: const Icon(Icons.store),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -128,19 +217,21 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _businessName,
+                                    businessName,
                                     style: textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
                                       Container(
-                                        width: 8,
-                                        height: 8,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: _isActive
+                                          color: isActive
                                               ? colorScheme.tertiary
                                               : colorScheme.errorContainer,
                                           borderRadius: BorderRadius.circular(
@@ -150,11 +241,11 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        _isActive
+                                        isActive
                                             ? 'Actif'
                                             : 'En attente d\'approbation',
                                         style: textTheme.labelMedium?.copyWith(
-                                          color: _isActive
+                                          color: isActive
                                               ? colorScheme.onTertiary
                                               : colorScheme.onErrorContainer,
                                         ),
@@ -261,7 +352,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                                 onSelectionChanged: (selection) {
                                   setState(() {
                                     _selectedTimePeriod = selection.first;
-                                    _initializeMockData();
+                                    _updateChartData();
                                   });
                                 },
                                 segments: const [

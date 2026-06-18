@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../../services/supabase_data_service.dart';
+import 'package:intl/intl.dart';
 
 enum UserType { client, business }
 
@@ -22,6 +24,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   UserType? _selectedType;
   UserStatus? _selectedStatus;
   int _currentPage = 0;
+  bool _isLoading = true;
 
   late List<_UserModel> _allUsers;
   late List<_UserModel> _filteredUsers;
@@ -31,7 +34,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     super.initState();
     _searchController = TextEditingController();
     _searchController.addListener(_filterUsers);
-    _initializeMockUsers();
+    _loadUsers();
   }
 
   @override
@@ -40,231 +43,31 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     super.dispose();
   }
 
-  void _initializeMockUsers() {
-    _allUsers = [
-      _UserModel(
-        id: 'user-001',
-        name: 'Aina Rajaonarivelo',
-        email: 'aina.r@gmail.com',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=32',
-        registeredAt: DateTime.now().subtract(const Duration(days: 180)),
-        status: UserStatus.active,
-        reviewsCount: 28,
-        businessesCount: 1,
-      ),
-      _UserModel(
-        id: 'user-002',
-        name: 'Jean Ralibera',
-        email: 'jean.ralibera@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=12',
-        registeredAt: DateTime.now().subtract(const Duration(days: 120)),
-        status: UserStatus.active,
-        reviewsCount: 15,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-003',
-        name: 'Sarah Nomena',
-        email: 'sarah.n@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=47',
-        registeredAt: DateTime.now().subtract(const Duration(days: 90)),
-        status: UserStatus.active,
-        reviewsCount: 8,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-004',
-        name: 'Rakoto Jean',
-        email: 'rakoto.jean@business.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=5',
-        registeredAt: DateTime.now().subtract(const Duration(days: 60)),
-        status: UserStatus.suspended,
-        reviewsCount: 0,
-        businessesCount: 2,
-      ),
-      _UserModel(
-        id: 'user-005',
-        name: 'Miora Ramaholimihaso',
-        email: 'miora.r@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=18',
-        registeredAt: DateTime.now().subtract(const Duration(days: 45)),
-        status: UserStatus.active,
-        reviewsCount: 22,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-006',
-        name: 'Tojo Andrianampoinimerina',
-        email: 'tojo.a@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=22',
-        registeredAt: DateTime.now().subtract(const Duration(days: 30)),
-        status: UserStatus.active,
-        reviewsCount: 5,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-007',
-        name: 'Nicole Business Hub',
-        email: 'contact@nicolebiz.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=8',
-        registeredAt: DateTime.now().subtract(const Duration(days: 25)),
-        status: UserStatus.active,
-        reviewsCount: 0,
-        businessesCount: 3,
-      ),
-      _UserModel(
-        id: 'user-008',
-        name: 'Lanto Andrianampoinimerina',
-        email: 'lanto.a@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=35',
-        registeredAt: DateTime.now().subtract(const Duration(days: 20)),
-        status: UserStatus.active,
-        reviewsCount: 3,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-009',
-        name: 'Toile Café',
-        email: 'hello@toilecafe.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=42',
-        registeredAt: DateTime.now().subtract(const Duration(days: 15)),
-        status: UserStatus.suspended,
-        reviewsCount: 0,
-        businessesCount: 1,
-      ),
-      _UserModel(
-        id: 'user-010',
-        name: 'Vicky Ramaholimihaso',
-        email: 'vicky.r@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=16',
-        registeredAt: DateTime.now().subtract(const Duration(days: 10)),
-        status: UserStatus.active,
-        reviewsCount: 12,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-011',
-        name: 'Pierre Rakotonirina',
-        email: 'pierre.r@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=28',
-        registeredAt: DateTime.now().subtract(const Duration(days: 8)),
-        status: UserStatus.active,
-        reviewsCount: 7,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-012',
-        name: 'Madagascar Tours',
-        email: 'booking@madtours.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=10',
-        registeredAt: DateTime.now().subtract(const Duration(days: 5)),
-        status: UserStatus.active,
-        reviewsCount: 0,
-        businessesCount: 2,
-      ),
-      _UserModel(
-        id: 'user-013',
-        name: 'Emma Andrianampoinimerina',
-        email: 'emma.a@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=55',
-        registeredAt: DateTime.now().subtract(const Duration(days: 3)),
-        status: UserStatus.active,
-        reviewsCount: 2,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-014',
-        name: 'Hotel Paradise',
-        email: 'info@hotelparadise.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=14',
-        registeredAt: DateTime.now().subtract(const Duration(days: 2)),
-        status: UserStatus.active,
-        reviewsCount: 0,
-        businessesCount: 1,
-      ),
-      _UserModel(
-        id: 'user-015',
-        name: 'Sophia Ralibera',
-        email: 'sophia.r@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=41',
-        registeredAt: DateTime.now().subtract(const Duration(hours: 20)),
-        status: UserStatus.active,
-        reviewsCount: 1,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-016',
-        name: 'Boutique Chic',
-        email: 'boutique@chic.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=20',
-        registeredAt: DateTime.now().subtract(const Duration(hours: 12)),
-        status: UserStatus.active,
-        reviewsCount: 0,
-        businessesCount: 1,
-      ),
-      _UserModel(
-        id: 'user-017',
-        name: 'Marc Razafimandimby',
-        email: 'marc.r@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=30',
-        registeredAt: DateTime.now().subtract(const Duration(hours: 6)),
-        status: UserStatus.suspended,
-        reviewsCount: 0,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-018',
-        name: 'Restaurant Belle Vue',
-        email: 'contact@bellevue.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=9',
-        registeredAt: DateTime.now().subtract(const Duration(hours: 3)),
-        status: UserStatus.active,
-        reviewsCount: 0,
-        businessesCount: 1,
-      ),
-      _UserModel(
-        id: 'user-019',
-        name: 'Andrianampoinimerina Rado',
-        email: 'rado.a@email.com',
-        type: UserType.client,
-        avatar: 'https://i.pravatar.cc/120?img=33',
-        registeredAt: DateTime.now().subtract(const Duration(hours: 1)),
-        status: UserStatus.active,
-        reviewsCount: 4,
-        businessesCount: 0,
-      ),
-      _UserModel(
-        id: 'user-020',
-        name: 'Fitness Pro Gym',
-        email: 'info@fitnessgym.mg',
-        type: UserType.business,
-        avatar: 'https://i.pravatar.cc/120?img=11',
-        registeredAt: DateTime.now(),
-        status: UserStatus.active,
-        reviewsCount: 0,
-        businessesCount: 1,
-      ),
-    ];
-
-    _filterUsers();
+  Future<void> _loadUsers() async {
+    try {
+      final usersData = await SupabaseDataService().getAllUsersAdmin();
+      if (mounted) {
+        setState(() {
+          _allUsers = usersData.map((u) => _UserModel(
+            id: u['id'] ?? '',
+            name: u['full_name'] ?? 'Sans Nom',
+            email: u['email'] ?? '',
+            type: u['account_type'] == 'business_owner' ? UserType.business : UserType.client,
+            avatar: u['avatar_url'] ?? 'https://i.pravatar.cc/120',
+            registeredAt: u['created_at'] != null ? DateTime.parse(u['created_at']) : DateTime.now(),
+            status: UserStatus.active,
+            reviewsCount: 0, // Optionnel: Faire un count si besoin
+            businessesCount: 0,
+          )).toList();
+          _filterUsers();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _filterUsers() {
@@ -544,7 +347,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         title: const Text('Gestion des utilisateurs'),
         centerTitle: false,
       ),
-      body: SingleChildScrollView(
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

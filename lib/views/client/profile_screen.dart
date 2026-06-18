@@ -11,9 +11,14 @@ import 'package:image_picker/image_picker.dart';
 import '../../repositories/auth_repository.dart';
 import '../../controllers/auth_providers.dart';
 import '../../routes/app_router.dart';
+import '../../services/supabase_data_service.dart';
 
 // Provider global pour gérer le mode du thème (Clair, Sombre ou Système)
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+
+final userBusinessProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+  return await SupabaseDataService().getUserBusiness();
+});
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -25,9 +30,15 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  // État local pour gérer les modifications (Mock)
   late String _fullName;
   String? _photoUrl;
+
+  bool _notificationsEnabled = true;
+  String _language = 'Français';
+
+  DateTime _memberSince = DateTime.now();
+  int _reviewsCount = 0;
+  bool _isLoadingStats = true;
 
   @override
   void initState() {
@@ -35,15 +46,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     _fullName = user?.userMetadata?['full_name'] ?? 'Utilisateur';
     _photoUrl = user?.userMetadata?['avatar_url'];
+    if (user != null && user.createdAt.isNotEmpty) {
+      _memberSince = DateTime.tryParse(user.createdAt) ?? DateTime.now();
+    }
+    _loadStats();
   }
 
-  bool _notificationsEnabled = true;
-  String _language = 'Français';
-
-  final DateTime _memberSince = DateTime(2023, 6, 15);
-  final int _reviewsCount = 28;
-  final int _favoritesCount = 14;
-  final int _photosCount = 9;
+  Future<void> _loadStats() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final List<dynamic> data = await Supabase.instance.client.from('reviews').select('id').eq('user_id', user.id);
+        if (mounted) {
+          setState(() {
+            _reviewsCount = data.length;
+            _isLoadingStats = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
+  }
 
   String _formatMemberSince(DateTime date) {
     return DateFormat.yMMMM('fr_FR').format(date);
@@ -407,10 +431,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeMode = ref.watch(themeModeProvider);
     final user = Supabase.instance.client.auth.currentUser;
-    final colorScheme = theme.colorScheme;
-    final isDark = colorScheme.brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final userBusinessAsync = ref.watch(userBusinessProvider);
+    final isDark = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system &&
+            MediaQuery.of(context).platformBrightness == Brightness.dark);
     final backgroundGradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
@@ -460,7 +488,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         )
                                         .take(2)
                                         .join(),
-                                    style: theme.textTheme.headlineSmall
+                                    style: Theme.of(context).textTheme.headlineSmall
                                         ?.copyWith(
                                           fontWeight: FontWeight.w800,
                                           color: colorScheme.onPrimaryContainer,
@@ -475,14 +503,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               children: [
                                 Text(
                                   _fullName,
-                                  style: theme.textTheme.titleLarge?.copyWith(
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   user?.email ?? '',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                     fontStyle: FontStyle.italic,
                                   ),
@@ -515,7 +543,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       duration: 420.ms,
                     ),
                 const SizedBox(height: 24),
-                Wrap(
+                _isLoadingStats 
+                  ? const Center(child: CircularProgressIndicator())
+                  : Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: [
@@ -525,24 +555,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       value: '$_reviewsCount',
                     ),
                     _ProfileStatCard(
-                      icon: Icons.favorite_rounded,
-                      label: 'Favoris',
-                      value: '$_favoritesCount',
-                    ),
-                    _ProfileStatCard(
-                      icon: Icons.camera_alt_rounded,
-                      label: 'Photos',
-                      value: '$_photosCount',
-                    ),
-                    _ProfileStatCard(
                       icon: Icons.calendar_month_rounded,
                       label: 'Membre depuis',
                       value: _formatMemberSince(_memberSince),
-                    ),
-                    _ProfileStatCard(
-                      icon: Icons.history_rounded,
-                      label: 'Visites',
-                      value: '42',
                     ),
                   ],
                 ),
@@ -560,13 +575,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.history_rounded,
                         title: 'Historique des avis',
                         subtitle: 'Voir vos avis publiés',
-                        onTap: () => context.push('/home/reviews/biz-001'),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bientôt disponible')));
+                        },
                       ),
                       _ProfileSectionTile(
                         icon: Icons.favorite_outline_rounded,
                         title: 'Mes favoris',
                         subtitle: 'Accéder à votre liste de favoris',
-                        onTap: () => context.push('/favorites'),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bientôt disponible')));
+                        },
                       ),
                       _ProfileSectionTile(
                         icon: Icons.settings_outlined,
@@ -574,22 +593,61 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         subtitle: 'Notifications, langue et thème',
                         onTap: _openSettingsSheet,
                       ),
-                      if (user?.userMetadata?['account_type'] ==
-                          'business_owner')
-                        _ProfileSectionTile(
-                          icon: Icons.storefront_rounded,
-                          title: 'Mon entreprise',
-                          subtitle: 'Gérer votre présence professionnelle',
-                          onTap: () => context.push('/business/dashboard'),
+                      userBusinessAsync.when(
+                        data: (business) {
+                          if (business != null) {
+                            return _ProfileSectionTile(
+                              icon: Icons.storefront_rounded,
+                              title: 'Mon entreprise',
+                              subtitle: 'Gérer votre présence professionnelle',
+                              onTap: () async {
+                                final status = business['status'];
+                                if (status == 'pending') {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('En attente'),
+                                      content: const Text('Votre demande de création d\'entreprise est en cours d\'examen par un administrateur.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                                    ),
+                                  );
+                                } else if (status == 'rejected') {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Demande rejetée'),
+                                      content: const Text('Désolé, votre demande a été rejetée. Veuillez contacter le support pour plus de détails.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                                    ),
+                                  );
+                                } else if (status == 'approved') {
+                                  if (user?.userMetadata?['account_type'] != 'business_owner') {
+                                    await SupabaseDataService().updateAccountType('business_owner');
+                                  }
+                                  if (context.mounted) context.push('/business/dashboard');
+                                }
+                              },
+                            );
+                          } else {
+                            return _ProfileSectionTile(
+                              icon: Icons.add_business_rounded,
+                              title: 'Créer mon entreprise',
+                              subtitle: 'Enregistrez votre établissement',
+                              onTap: () => context.push('/business/create'),
+                            );
+                          }
+                        },
+                        loading: () => const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
                         ),
-                      if (user?.userMetadata?['account_type'] !=
-                          'business_owner')
-                        _ProfileSectionTile(
-                          icon: Icons.add_business_rounded,
-                          title: 'Créer mon entreprise',
-                          subtitle: 'Enregistrez votre établissement',
-                          onTap: () => context.push('/business/create'),
+                        error: (error, stack) => _ProfileSectionTile(
+                          icon: Icons.error_outline,
+                          title: 'Erreur (Admin/DB)',
+                          subtitle: error.toString(),
+                          onTap: () {},
                         ),
+                      ),
                       _ProfileSectionTile(
                         icon: Icons.headset_mic_rounded,
                         title: 'Aide & Support',

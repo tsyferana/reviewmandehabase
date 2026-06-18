@@ -93,6 +93,53 @@ class SupabaseDataService {
     });
   }
 
+  Future<String> uploadBusinessImage(dynamic file, String prefix) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw 'Utilisateur non connecté.';
+
+    final ext = file.path.split('.').last.toLowerCase();
+    final path = '${user.id}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _supabase.storage.from('businesses').upload(path, file);
+    return _supabase.storage.from('businesses').getPublicUrl(path);
+  }
+
+  Future<Map<String, dynamic>?> getUserBusiness() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return null;
+    
+    // On utilise limit(1) pour éviter l'erreur "multiple rows returned"
+    // si l'utilisateur a accidentellement créé plusieurs entreprises.
+    final response = await _supabase
+        .from('businesses')
+        .select('*, categories(name)')
+        .eq('owner_id', user.id)
+        .limit(1);
+        
+    if (response.isNotEmpty) {
+      return response.first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  Future<void> updateBusiness(String businessId, Map<String, dynamic> updates) async {
+    await _supabase.from('businesses').update(updates).eq('id', businessId);
+  }
+
+  Future<List<Map<String, dynamic>>> getBusinessReviews(String businessId) async {
+    return await _supabase
+        .from('reviews')
+        .select('*, profiles(full_name, avatar_url)')
+        .eq('business_id', businessId)
+        .order('created_at', ascending: false);
+  }
+
+  Future<void> updateAccountType(String type) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    await _supabase.auth.updateUser(UserAttributes(data: {'account_type': type}));
+    await _supabase.from('profiles').update({'account_type': type}).eq('id', user.id);
+  }
+
   // ================= ADMIN METHODS =================
 
   Future<Map<String, int>> getAdminDashboardStats() async {
@@ -129,6 +176,10 @@ class SupabaseDataService {
 
   Future<void> createCategoryAdmin(String name, String iconName) async {
     await _supabase.from('categories').insert({'name': name, 'icon_name': iconName});
+  }
+
+  Future<void> updateCategoryAdmin(String categoryId, String name, String iconName) async {
+    await _supabase.from('categories').update({'name': name, 'icon_name': iconName}).eq('id', categoryId);
   }
 
   Future<void> deleteCategoryAdmin(String categoryId) async {
