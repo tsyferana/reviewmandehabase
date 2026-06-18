@@ -56,11 +56,15 @@ class ReviewModel {
       id: json['id'] as String,
       businessId: json['business_id'] as String? ?? '',
       userId: uId,
-      userName: profile['full_name'] as String? ?? 'Utilisateur',
-      userPhotoUrl: profile['avatar_url'] as String? ?? '',
+      userName: profile['full_name']?.toString() ?? 'Utilisateur',
+      userPhotoUrl: profile['avatar_url']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      comment: json['comment'] as String? ?? '',
-      photoUrls: List<String>.from(json['photo_urls'] as List? ?? []),
+      comment: json['comment']?.toString() ?? '',
+      photoUrls: (json['photo_urls'] as List?)?.map((e) {
+        if (e is String) return e;
+        if (e is Map) return e.values.firstOrNull?.toString() ?? e.toString();
+        return e.toString();
+      }).toList() ?? [],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       isCurrentUser: currentUserId != null && currentUserId == uId,
     );

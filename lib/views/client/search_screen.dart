@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/business_model.dart';
@@ -603,12 +604,24 @@ class _BusinessMap extends StatelessWidget {
         ? MapsSimService.antananarivoCenter
         : LatLng(businesses.first.latitude, businesses.first.longitude);
 
-    return GoogleMap(
+    return FlutterMap(
       key: const ValueKey('search_results_map'),
-      initialCameraPosition: CameraPosition(target: initialPosition, zoom: 13),
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
-      markers: mapsService.buildBusinessMarkers(businesses),
+      options: MapOptions(
+        initialCenter: initialPosition,
+        initialZoom: 13,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.reviewapp',
+        ),
+        MarkerLayer(
+          markers: mapsService.buildBusinessMarkers(
+            businesses,
+            onTap: (business) => context.go('/home/business/${business.id}'),
+          ),
+        ),
+      ],
     );
   }
 }

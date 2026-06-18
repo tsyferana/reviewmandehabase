@@ -12,7 +12,7 @@ class SupabaseDataService {
   }
 
   Future<List<BusinessModel>> getBusinesses() async {
-    final response = await _supabase.from('businesses').select('*, categories(name)');
+    final response = await _supabase.from('businesses').select('*, categories(name)').eq('status', 'approved');
     return response.map((e) => BusinessModel.fromJson(e)).toList();
   }
 
@@ -99,6 +99,16 @@ class SupabaseDataService {
 
     final ext = file.path.split('.').last.toLowerCase();
     final path = '${user.id}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _supabase.storage.from('businesses').upload(path, file);
+    return _supabase.storage.from('businesses').getPublicUrl(path);
+  }
+
+  Future<String> uploadReviewImage(dynamic file) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw 'Utilisateur non connecté.';
+
+    final ext = file.path.split('.').last.toLowerCase();
+    final path = '${user.id}/review_${DateTime.now().millisecondsSinceEpoch}.$ext';
     await _supabase.storage.from('businesses').upload(path, file);
     return _supabase.storage.from('businesses').getPublicUrl(path);
   }

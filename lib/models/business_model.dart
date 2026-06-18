@@ -20,7 +20,7 @@ class BusinessModel {
     this.email,
     this.galleryUrls = const [],
     this.openingHours = const {},
-    this.services = const {},
+    this.services = const [],
   });
 
   final String id;
@@ -43,17 +43,17 @@ class BusinessModel {
   final String? email;
   final List<String> galleryUrls;
   final Map<String, dynamic> openingHours;
-  final dynamic services;
+  final List<Map<String, String>> services;
 
   factory BusinessModel.fromJson(Map<String, dynamic> json) {
     return BusinessModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      ownerId: json['owner_id'] as String?,
-      categoryId: json['category_id'] as String?,
-      categoryName: json['categories'] != null ? json['categories']['name'] as String : '',
-      city: json['city'] as String? ?? 'Antananarivo',
-      imageUrl: json['image_url'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      ownerId: json['owner_id']?.toString(),
+      categoryId: json['category_id']?.toString(),
+      categoryName: json['categories'] != null ? json['categories']['name']?.toString() ?? '' : '',
+      city: json['city']?.toString() ?? 'Antananarivo',
+      imageUrl: json['image_url']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: json['review_count'] as int? ?? 0,
       distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0.0,
@@ -61,13 +61,25 @@ class BusinessModel {
       latitude: (json['latitude'] as num?)?.toDouble() ?? -18.8792,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 47.5079,
       isOpen: json['is_open'] as bool? ?? true,
-      address: json['address'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      email: json['email'] as String?,
-      galleryUrls: List<String>.from(json['gallery_urls'] as List? ?? []),
+      address: json['address']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString(),
+      galleryUrls: (json['gallery_urls'] as List?)?.map((e) {
+        if (e is String) return e;
+        if (e is Map) return e.values.firstOrNull?.toString() ?? e.toString();
+        return e.toString();
+      }).toList() ?? [],
       openingHours: json['opening_hours'] is Map ? Map<String, dynamic>.from(json['opening_hours'] as Map) : {},
-      services: json['services'],
+      services: json['services'] is List
+          ? (json['services'] as List).map((e) {
+              final m = e as Map;
+              return {
+                'name': m['name']?.toString() ?? '',
+                'price': m['price']?.toString() ?? '',
+              };
+            }).toList()
+          : [],
     );
   }
 

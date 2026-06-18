@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../models/category_model.dart';
 import '../../services/supabase_data_service.dart';
@@ -187,24 +188,38 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
               content: SizedBox(
                 width: double.maxFinite,
                 height: 400,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.map_rounded, size: 48, color: Colors.grey.shade600),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Google Maps désactivé\n(Clé API manquante)',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey.shade700),
-                        ),
-                      ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: selectedPos,
+                      initialZoom: 13,
+                      onTap: (tapPosition, point) {
+                        setDialogState(() {
+                          selectedPos = point;
+                        });
+                      },
                     ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.reviewapp',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: selectedPos,
+                            width: 44,
+                            height: 44,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.redAccent,
+                              size: 44,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),

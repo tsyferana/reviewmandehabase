@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -90,8 +91,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                   ),
                   const SizedBox(height: 28),
                   _AboutSection(business: business),
-                  const SizedBox(height: 28),
-                  _MiniMap(business: business, mapsService: _mapsService),
                   const SizedBox(height: 28),
                   _ServicesSection(services: business.services),
                   const SizedBox(height: 28),
@@ -326,7 +325,7 @@ class _PhotoGallery extends StatelessWidget {
         _SectionTitle(title: 'Galerie photos'),
         const SizedBox(height: 12),
         SizedBox(
-          height: 106,
+          height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: imageUrls.length,
@@ -402,13 +401,27 @@ class _AboutSection extends StatelessWidget {
           childrenPadding: EdgeInsets.zero,
           title: const Text('Horaires'),
           children: business.openingHours.entries.map((entry) {
+            String displayValue;
+            final val = entry.value;
+            if (val is String) {
+              displayValue = val;
+            } else if (val is Map) {
+              if (val['isOpen'] == true) {
+                displayValue = '${val['open']} - ${val['close']}';
+              } else {
+                displayValue = 'Fermé';
+              }
+            } else {
+              displayValue = val.toString();
+            }
+
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
                   Expanded(child: Text(entry.key)),
                   Text(
-                    entry.value,
+                    displayValue,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -421,55 +434,19 @@ class _AboutSection extends StatelessWidget {
   }
 }
 
-class _MiniMap extends StatelessWidget {
-  const _MiniMap({required this.business, required this.mapsService});
-
-  final BusinessModel business;
-  final MapsSimService mapsService;
-
-  @override
-  Widget build(BuildContext context) {
-    final position = LatLng(business.latitude, business.longitude);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionTitle(title: 'Localisation'),
-        const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 180,
-            child: GoogleMap(
-              key: ValueKey('mini_map_${business.id}'),
-              initialCameraPosition: CameraPosition(target: position, zoom: 15),
-              zoomControlsEnabled: false,
-              myLocationButtonEnabled: false,
-              scrollGesturesEnabled: false,
-              tiltGesturesEnabled: false,
-              rotateGesturesEnabled: false,
-              markers: mapsService.buildBusinessMarkers([business]),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _ServicesSection extends StatelessWidget {
   const _ServicesSection({required this.services});
 
-  final Map<String, String> services;
+  final List<Map<String, String>> services;
 
   @override
   Widget build(BuildContext context) {
     final fallbackServices = services.isEmpty
-        ? const {
-            'Consultation': '25 000 Ar',
-            'Service standard': '45 000 Ar',
-            'Service premium': 'Sur devis',
-          }
+        ? [
+            {'name': 'Consultation', 'price': '25 000 Ar'},
+            {'name': 'Service standard', 'price': '45 000 Ar'},
+            {'name': 'Service premium', 'price': 'Sur devis'},
+          ]
         : services;
 
     return Column(
@@ -477,13 +454,13 @@ class _ServicesSection extends StatelessWidget {
       children: [
         _SectionTitle(title: 'Services'),
         const SizedBox(height: 10),
-        ...fallbackServices.entries.map((entry) {
+        ...fallbackServices.map((service) {
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.check_circle_outline_rounded),
-            title: Text(entry.key),
+            title: Text(service['name'] ?? ''),
             trailing: Text(
-              entry.value,
+              service['price'] ?? '',
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           );
@@ -576,7 +553,7 @@ class _ReviewTile extends StatelessWidget {
                 if (review.photoUrls.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   SizedBox(
-                    height: 70,
+                    height: 80,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: review.photoUrls.length,
@@ -586,8 +563,8 @@ class _ReviewTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
                             review.photoUrls[index],
-                            width: 92,
-                            height: 70,
+                            width: 100,
+                            height: 80,
                             fit: BoxFit.cover,
                           ),
                         );

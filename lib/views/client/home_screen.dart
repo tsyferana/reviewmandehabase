@@ -263,7 +263,7 @@ class _BusinessSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 242,
+            height: 260,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -305,26 +305,23 @@ class _BusinessCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Hero(
-                tag: 'business-cover-${business.id}',
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(
-                    business.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                        ),
-                        child: Icon(
-                          Icons.storefront_rounded,
-                          color: colorScheme.onSurfaceVariant,
-                          size: 42,
-                        ),
-                      );
-                    },
-                  ),
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  business.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                      child: Icon(
+                        Icons.storefront_rounded,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 42,
+                      ),
+                    );
+                  },
                 ),
               ),
               Padding(

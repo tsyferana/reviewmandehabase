@@ -108,8 +108,14 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
         }
         
         if (biz['services'] != null) {
-           final List<dynamic> srvs = biz['services'];
-           _services = srvs.map((e) => Map<String, String>.from(e)).toList();
+          final srvs = biz['services'] as List? ?? [];
+          _services = srvs.map((e) {
+            final m = e as Map;
+            return {
+              'name': m['name']?.toString() ?? '',
+              'price': m['price']?.toString() ?? '',
+            };
+          }).toList();
         }
       }
     } catch (e) {

@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
 import '../../controllers/review_controller.dart';
 import '../../models/review_model.dart';
 import '../../repositories/review_repository.dart';
+import '../../services/supabase_data_service.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -420,18 +423,12 @@ class _ReviewFormSheet extends StatefulWidget {
 }
 
 class _ReviewFormSheetState extends State<_ReviewFormSheet> {
-  static const _mockPhotoPool = [
-    'https://picsum.photos/seed/new-review-1/320/240',
-    'https://picsum.photos/seed/new-review-2/320/240',
-    'https://picsum.photos/seed/new-review-3/320/240',
-    'https://picsum.photos/seed/new-review-4/320/240',
-  ];
-
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _commentController;
   late double _rating;
   late List<String> _photoUrls;
   bool _isSaving = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -480,9 +477,28 @@ class _ReviewFormSheetState extends State<_ReviewFormSheet> {
     );
   }
 
-  void _addMockPhoto() {
-    final nextPhoto = _mockPhotoPool[_photoUrls.length % _mockPhotoPool.length];
-    setState(() => _photoUrls = [..._photoUrls, nextPhoto]);
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final file = File(pickedFile.path);
+      final url = await SupabaseDataService().uploadReviewImage(file);
+      setState(() {
+        _photoUrls = [..._photoUrls, url];
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
   }
 
   @override
@@ -546,8 +562,10 @@ class _ReviewFormSheetState extends State<_ReviewFormSheet> {
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: _addMockPhoto,
-                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    onPressed: _isUploadingImage ? null : _pickAndUploadPhoto,
+                    icon: _isUploadingImage 
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
+                        : const Icon(Icons.add_photo_alternate_outlined),
                     label: const Text('Ajouter'),
                   ),
                 ],
