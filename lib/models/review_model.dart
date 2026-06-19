@@ -1,17 +1,26 @@
 class ReviewReplyModel {
   const ReviewReplyModel({
     required this.senderRole,
+    this.senderId,
+    this.senderName,
+    this.senderPhotoUrl,
     required this.message,
     required this.createdAt,
   });
 
   final String senderRole; // 'owner' or 'client'
+  final String? senderId;
+  final String? senderName;
+  final String? senderPhotoUrl;
   final String message;
   final DateTime createdAt;
 
   factory ReviewReplyModel.fromJson(Map<String, dynamic> json) {
     return ReviewReplyModel(
       senderRole: json['senderRole']?.toString() ?? 'owner',
+      senderId: json['senderId']?.toString(),
+      senderName: json['senderName']?.toString(),
+      senderPhotoUrl: json['senderPhotoUrl']?.toString(),
       message: json['message']?.toString() ?? '',
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
     );
@@ -20,6 +29,9 @@ class ReviewReplyModel {
   Map<String, dynamic> toJson() {
     return {
       'senderRole': senderRole,
+      if (senderId != null) 'senderId': senderId,
+      if (senderName != null) 'senderName': senderName,
+      if (senderPhotoUrl != null) 'senderPhotoUrl': senderPhotoUrl,
       'message': message,
       'createdAt': createdAt.toIso8601String(),
     };

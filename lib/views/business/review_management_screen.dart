@@ -664,21 +664,29 @@ class _ReviewManagementCardState extends State<_ReviewManagementCard> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              isOwner ? Icons.business_rounded : Icons.person_rounded,
-                              size: 16,
-                              color: isOwner
-                                  ? colorScheme.onPrimaryContainer
-                                  : colorScheme.onSecondaryContainer,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              isOwner ? 'Réponse de l\'entreprise' : 'Réponse du client',
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: isOwner
-                                    ? colorScheme.onPrimaryContainer
-                                    : colorScheme.onSecondaryContainer,
-                                fontWeight: FontWeight.w700,
+                            if (isOwner)
+                              Icon(Icons.business_rounded, size: 16, color: colorScheme.onPrimaryContainer)
+                            else if (reply.senderPhotoUrl != null && reply.senderPhotoUrl!.isNotEmpty)
+                              CircleAvatar(
+                                radius: 10,
+                                backgroundImage: NetworkImage(reply.senderPhotoUrl!),
+                              )
+                            else
+                              Icon(Icons.person_rounded, size: 16, color: colorScheme.onSecondaryContainer),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                isOwner 
+                                    ? 'Réponse de l\'entreprise' 
+                                    : (reply.senderName ?? 'Réponse du client'),
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: isOwner
+                                      ? colorScheme.onPrimaryContainer
+                                      : colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -699,7 +707,7 @@ class _ReviewManagementCardState extends State<_ReviewManagementCard> {
             ],
 
             // Always allow response form (to continue thread)
-            if (widget.review.replies.isEmpty || widget.review.replies.last.senderRole == 'client') ...[
+            if (true) ...[
               // Response Form (if no response yet)
               Container(
                 padding: const EdgeInsets.all(12),

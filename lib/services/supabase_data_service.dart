@@ -97,9 +97,16 @@ class SupabaseDataService {
     final user = _supabase.auth.currentUser;
     if (user == null) throw 'Utilisateur non connecté.';
 
-    final ext = file.path.split('.').last.toLowerCase();
+    final name = file.name as String;
+    final ext = name.split('.').last.toLowerCase();
     final path = '${user.id}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _supabase.storage.from('businesses').upload(path, file);
+    
+    final bytes = await file.readAsBytes();
+    await _supabase.storage.from('businesses').uploadBinary(
+      path, 
+      bytes,
+      fileOptions: FileOptions(contentType: 'image/$ext'),
+    );
     return _supabase.storage.from('businesses').getPublicUrl(path);
   }
 
@@ -107,9 +114,16 @@ class SupabaseDataService {
     final user = _supabase.auth.currentUser;
     if (user == null) throw 'Utilisateur non connecté.';
 
-    final ext = file.path.split('.').last.toLowerCase();
+    final name = file.name as String;
+    final ext = name.split('.').last.toLowerCase();
     final path = '${user.id}/review_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _supabase.storage.from('businesses').upload(path, file);
+    
+    final bytes = await file.readAsBytes();
+    await _supabase.storage.from('businesses').uploadBinary(
+      path, 
+      bytes,
+      fileOptions: FileOptions(contentType: 'image/$ext'),
+    );
     return _supabase.storage.from('businesses').getPublicUrl(path);
   }
 

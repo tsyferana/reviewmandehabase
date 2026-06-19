@@ -10,6 +10,7 @@ import '../../models/category_model.dart';
 import '../../services/location_sim_service.dart';
 import '../../services/maps_sim_service.dart';
 import '../../services/supabase_data_service.dart';
+import '../../widgets/favorite_button.dart';
 
 enum _SearchViewMode { list, map }
 
@@ -476,15 +477,25 @@ class _SearchResultCard extends StatelessWidget {
               child: SizedBox(
                 width: 112,
                 height: 132,
-                child: Image.network(
-                  business.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return ColoredBox(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: const Icon(Icons.storefront_rounded),
-                    );
-                  },
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      business.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return ColoredBox(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: const Icon(Icons.storefront_rounded),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: FavoriteButton(businessId: business.id),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -512,12 +523,19 @@ class _SearchResultCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: colorScheme.tertiary,
-                          size: 19,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(5, (index) {
+                            return Icon(
+                              index < business.rating.round()
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: Colors.amber,
+                              size: 16,
+                            );
+                          }),
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 4),
                         Text(
                           business.rating.toStringAsFixed(1),
                           style: textTheme.labelLarge?.copyWith(

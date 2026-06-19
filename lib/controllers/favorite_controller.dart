@@ -16,8 +16,14 @@ class FavoriteController extends ChangeNotifier {
 
   Future<void> loadFavorites() async {
     _setLoading(true);
-    _favorites = await _favoriteRepository.getFavorites();
-    _setLoading(false);
+    try {
+      _favorites = await _favoriteRepository.getFavorites();
+    } catch (e) {
+      debugPrint('Erreur getFavorites: $e');
+      _favorites = []; // On évite le crash
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> refresh() => loadFavorites();
@@ -33,6 +39,24 @@ class FavoriteController extends ChangeNotifier {
       _favorites = previousFavorites;
       notifyListeners();
     }
+  }
+
+  Future<void> addFavorite(BusinessModel business) async {
+    if (!_favorites.any((b) => b.id == business.id)) {
+      _favorites = [..._favorites, business];
+      notifyListeners();
+
+      try {
+        await _favoriteRepository.addFavorite(business.id);
+      } catch (_) {
+        _favorites.removeWhere((b) => b.id == business.id);
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<bool> isFavorite(String businessId) async {
+    return await _favoriteRepository.isFavorite(businessId);
   }
 
   void _setLoading(bool value) {

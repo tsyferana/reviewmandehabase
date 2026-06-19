@@ -8,9 +8,11 @@ import 'package:intl/intl.dart';
 
 import '../../models/business_model.dart';
 import '../../models/review_model.dart';
+import '../../repositories/favorite_repository.dart';
 import '../../repositories/review_repository.dart';
 import '../../services/maps_sim_service.dart';
 import '../../services/supabase_data_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   const BusinessDetailScreen({super.key, this.businessId = 'biz-001'});
@@ -26,19 +28,88 @@ class BusinessDetailScreen extends StatefulWidget {
 class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   final _dataService = SupabaseDataService();
   final _mapsService = MapsSimService();
+  final _favoriteRepo = FavoriteRepository();
 
   BusinessModel? _business;
   List<ReviewModel> _reviews = [];
   bool _isLoading = true;
   bool _isFavorite = false;
 
+  RealtimeChannel? _businessChannel;
+  RealtimeChannel? _reviewsChannel;
+
   @override
   void initState() {
     super.initState();
     unawaited(_loadDetail());
+    unawaited(_checkFavorite());
+    _setupRealtime();
   }
 
-  Future<void> _loadDetail() async {
+  void _setupRealtime() {
+    _businessChannel = Supabase.instance.client
+        .channel('public:businesses:${widget.businessId}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'businesses',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: widget.businessId,
+          ),
+          callback: (payload) {
+            if (mounted) unawaited(_loadDetail(silent: true));
+          },
+        )
+        .subscribe();
+
+    _reviewsChannel = Supabase.instance.client
+        .channel('public:reviews:${widget.businessId}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'reviews',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'business_id',
+            value: widget.businessId,
+          ),
+          callback: (payload) {
+            if (mounted) unawaited(_loadDetail(silent: true));
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    _businessChannel?.unsubscribe();
+    _reviewsChannel?.unsubscribe();
+    super.dispose();
+  }
+
+  Future<void> _checkFavorite() async {
+    final isFav = await _favoriteRepo.isFavorite(widget.businessId);
+    if (!mounted) return;
+    setState(() => _isFavorite = isFav);
+  }
+
+  Future<void> _toggleFavorite() async {
+    final newValue = !_isFavorite;
+    setState(() => _isFavorite = newValue);
+    if (newValue) {
+      await _favoriteRepo.addFavorite(widget.businessId);
+    } else {
+      await _favoriteRepo.removeFavorite(widget.businessId);
+    }
+  }
+
+  Future<void> _loadDetail({bool silent = false}) async {
+    if (!silent) {
+      setState(() => _isLoading = true);
+    }
+    
     final business = await _dataService.getBusinessById(widget.businessId);
     final reviews = await _dataService.getReviewsForBusiness(
       widget.businessId,
@@ -49,7 +120,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
     setState(() {
       _business = business;
       _reviews = reviews;
-      _isLoading = false;
+      if (!silent) _isLoading = false;
     });
   }
 
@@ -82,9 +153,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                   const SizedBox(height: 18),
                   _ActionButtons(
                     isFavorite: _isFavorite,
-                    onFavoriteToggle: () {
-                      setState(() => _isFavorite = !_isFavorite);
-                    },
+                    onFavoriteToggle: _toggleFavorite,
                   ),
                   const SizedBox(height: 26),
                   _PhotoGallery(
@@ -92,10 +161,16 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                   ),
                   const SizedBox(height: 28),
                   _AboutSection(business: business),
-                  const SizedBox(height: 28),
-                  _ServicesSection(services: business.services),
-                  const SizedBox(height: 28),
-                  _ReviewsSection(businessId: business.id, reviews: _reviews),
+                        const SizedBox(height: 24),
+                        _ServicesSection(services: business.services),
+                        const SizedBox(height: 24),
+                        _RatingSummary(business: business),
+                        const SizedBox(height: 24),
+                        _ReviewsSection(
+                          businessId: widget.businessId,
+                          reviews: _reviews,
+                        ),
+                        const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -501,6 +576,96 @@ class _ReviewsSection extends StatelessWidget {
   }
 }
 
+class _RatingSummary extends StatelessWidget {
+  const _RatingSummary({required this.business});
+
+  final BusinessModel business;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Column(
+            children: [
+              Text(
+                business.rating.toStringAsFixed(1),
+                style: textTheme.displayMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.primary,
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < business.rating.round()
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
+                    color: Colors.amber,
+                    size: 20,
+                  );
+                }),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${business.reviewCount} avis',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.bolt_rounded, color: Colors.amber[600], size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Statistique en temps réel',
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Cette note moyenne globale se met à jour instantanément.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReviewTile extends StatelessWidget {
   const _ReviewTile({required this.review});
 
@@ -597,17 +762,27 @@ class _ReviewTile extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  isOwner ? Icons.reply_rounded : Icons.person_rounded, 
-                                  size: 16, 
-                                  color: isOwner ? colorScheme.primary : colorScheme.secondary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isOwner ? 'Réponse de l\'entreprise' : 'Votre réponse',
-                                  style: textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: isOwner ? colorScheme.primary : colorScheme.secondary,
+                                if (isOwner)
+                                  Icon(Icons.reply_rounded, size: 16, color: colorScheme.primary)
+                                else if (reply.senderPhotoUrl != null && reply.senderPhotoUrl!.isNotEmpty)
+                                  CircleAvatar(
+                                    radius: 10,
+                                    backgroundImage: NetworkImage(reply.senderPhotoUrl!),
+                                  )
+                                else
+                                  Icon(Icons.person_rounded, size: 16, color: colorScheme.secondary),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    isOwner 
+                                        ? 'Réponse de l\'entreprise' 
+                                        : (reply.senderName ?? 'Réponse du client'),
+                                    style: textTheme.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: isOwner ? colorScheme.primary : colorScheme.secondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -625,8 +800,8 @@ class _ReviewTile extends StatelessWidget {
                     );
                   }).toList(),
                 ],
-                // Add reply button if last message is from owner and currentUser is the author
-                if (review.isCurrentUser && (review.replies.isEmpty || review.replies.last.senderRole == 'owner')) ...[
+                // Add reply button for any user
+                if (true) ...[
                   const SizedBox(height: 4),
                   Align(
                     alignment: Alignment.centerRight,
@@ -675,12 +850,7 @@ class _ReviewTile extends StatelessWidget {
               
               try {
                 final repo = ReviewRepository();
-                final newReply = ReviewReplyModel(
-                  senderRole: 'client',
-                  message: msg,
-                  createdAt: DateTime.now(),
-                );
-                await repo.updateReplies(review.id, [...review.replies, newReply]);
+                await repo.addReplyToReview(review.id, msg, 'client');
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Réponse envoyée. Actualisez la page.')),

@@ -110,15 +110,7 @@ class ReviewController extends ChangeNotifier {
     try {
       final index = _reviews.indexWhere((review) => review.id == reviewId);
       if (index != -1) {
-        final review = _reviews[index];
-        final newReply = ReviewReplyModel(
-          senderRole: role,
-          message: message,
-          createdAt: DateTime.now(),
-        );
-        final updatedReplies = [...review.replies, newReply];
-        
-        final updatedReview = await _reviewRepository.updateReplies(reviewId, updatedReplies);
+        final updatedReview = await _reviewRepository.addReplyToReview(reviewId, message, role);
         _reviews[index] = updatedReview;
       }
     } finally {

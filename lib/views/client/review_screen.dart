@@ -495,17 +495,20 @@ class _ReviewFormSheetState extends State<_ReviewFormSheet> {
 
   Future<void> _pickAndUploadPhoto() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles.isEmpty) return;
 
     setState(() => _isUploadingImage = true);
 
     try {
-      final file = File(pickedFile.path);
-      final url = await SupabaseDataService().uploadReviewImage(file);
-      setState(() {
-        _photoUrls = [..._photoUrls, url];
-      });
+      for (final pickedFile in pickedFiles) {
+        final url = await SupabaseDataService().uploadReviewImage(pickedFile);
+        if (mounted) {
+          setState(() {
+            _photoUrls = [..._photoUrls, url];
+          });
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../controllers/home_controller.dart';
 import '../../models/business_model.dart';
 import '../../models/category_model.dart';
+import '../../widgets/favorite_button.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -307,21 +308,31 @@ class _BusinessCard extends StatelessWidget {
             children: [
               AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Image.network(
-                  business.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                      ),
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 42,
-                      ),
-                    );
-                  },
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      business.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                          ),
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            color: colorScheme.onSurfaceVariant,
+                            size: 42,
+                          ),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: FavoriteButton(businessId: business.id),
+                    ),
+                  ],
                 ),
               ),
               Padding(
@@ -350,19 +361,26 @@ class _BusinessCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: colorScheme.tertiary,
-                          size: 19,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(5, (index) {
+                            return Icon(
+                              index < business.rating.round()
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: Colors.amber,
+                              size: 14,
+                            );
+                          }),
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 4),
                         Text(
                           business.rating.toStringAsFixed(1),
                           style: textTheme.labelLarge?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(width: 5),
+                        const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             '(${business.reviewCount})',

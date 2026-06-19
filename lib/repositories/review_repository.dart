@@ -98,4 +98,37 @@ class ReviewRepository {
 
     return ReviewModel.fromJson(response, currentUserId: currentUserId);
   }
+
+  Future<ReviewModel> addReplyToReview(String reviewId, String message, String role) async {
+    final currentUserId = _supabase.auth.currentUser?.id;
+    if (currentUserId == null) throw 'Utilisateur non connecté';
+
+    // 1. Fetch current user's profile
+    final profileResp = await _supabase.from('profiles').select('full_name, avatar_url').eq('id', currentUserId).maybeSingle();
+    final senderName = profileResp?['full_name']?.toString() ?? 'Utilisateur';
+    final senderPhotoUrl = profileResp?['avatar_url']?.toString() ?? '';
+
+    // 2. Fetch the existing review to get current replies
+    final reviewResp = await _supabase.from('reviews').select('replies').eq('id', reviewId).single();
+    final currentRepliesJson = reviewResp['replies'] as List<dynamic>? ?? [];
+    
+    final currentReplies = currentRepliesJson
+        .map((e) => ReviewReplyModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    // 3. Create new reply
+    final newReply = ReviewReplyModel(
+      senderRole: role,
+      senderId: currentUserId,
+      senderName: senderName,
+      senderPhotoUrl: senderPhotoUrl,
+      message: message,
+      createdAt: DateTime.now(),
+    );
+
+    // 4. Append and update
+    currentReplies.add(newReply);
+    
+    return updateReplies(reviewId, currentReplies);
+  }
 }
