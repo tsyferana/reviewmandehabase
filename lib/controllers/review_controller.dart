@@ -62,14 +62,17 @@ class ReviewController extends ChangeNotifier {
     required List<String> photoUrls,
   }) async {
     _setSaving(true);
-    final review = await _reviewRepository.addReview(
-      businessId: businessId,
-      rating: rating,
-      comment: comment,
-      photoUrls: photoUrls,
-    );
-    _reviews.insert(0, review);
-    _setSaving(false);
+    try {
+      final review = await _reviewRepository.addReview(
+        businessId: businessId,
+        rating: rating,
+        comment: comment,
+        photoUrls: photoUrls,
+      );
+      _reviews.insert(0, review);
+    } finally {
+      _setSaving(false);
+    }
   }
 
   Future<void> updateReview({
@@ -79,17 +82,20 @@ class ReviewController extends ChangeNotifier {
     required List<String> photoUrls,
   }) async {
     _setSaving(true);
-    final updatedReview = await _reviewRepository.updateReview(
-      reviewId: reviewId,
-      rating: rating,
-      comment: comment,
-      photoUrls: photoUrls,
-    );
-    final index = _reviews.indexWhere((review) => review.id == reviewId);
-    if (index != -1) {
-      _reviews[index] = updatedReview;
+    try {
+      final updatedReview = await _reviewRepository.updateReview(
+        reviewId: reviewId,
+        rating: rating,
+        comment: comment,
+        photoUrls: photoUrls,
+      );
+      final index = _reviews.indexWhere((review) => review.id == reviewId);
+      if (index != -1) {
+        _reviews[index] = updatedReview;
+      }
+    } finally {
+      _setSaving(false);
     }
-    _setSaving(false);
   }
 
   Future<void> deleteReview(String reviewId) async {
@@ -97,6 +103,27 @@ class ReviewController extends ChangeNotifier {
     await _reviewRepository.deleteReview(reviewId);
     _reviews.removeWhere((review) => review.id == reviewId);
     _setSaving(false);
+  }
+
+  Future<void> addReplyToThread(String reviewId, String message, String role) async {
+    _setSaving(true);
+    try {
+      final index = _reviews.indexWhere((review) => review.id == reviewId);
+      if (index != -1) {
+        final review = _reviews[index];
+        final newReply = ReviewReplyModel(
+          senderRole: role,
+          message: message,
+          createdAt: DateTime.now(),
+        );
+        final updatedReplies = [...review.replies, newReply];
+        
+        final updatedReview = await _reviewRepository.updateReplies(reviewId, updatedReplies);
+        _reviews[index] = updatedReview;
+      }
+    } finally {
+      _setSaving(false);
+    }
   }
 
   void _setLoading(bool value) {

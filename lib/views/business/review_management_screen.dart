@@ -28,8 +28,7 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
   ReviewFilterOption _filterOption = ReviewFilterOption.all;
   ReviewSortingOption _sortOption = ReviewSortingOption.recent;
 
-  // Mock data: store responses and reports
-  final Map<String, String> _businessResponses = {};
+  // Mock data: store reports
   final Set<String> _reportedReviews = {};
 
   @override
@@ -75,11 +74,11 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
         break;
       case ReviewFilterOption.unanswered:
         filtered = filtered
-            .where((r) => !_businessResponses.containsKey(r.id))
+            .where((r) => r.replies.isEmpty)
             .toList();
       case ReviewFilterOption.answered:
         filtered = filtered
-            .where((r) => _businessResponses.containsKey(r.id))
+            .where((r) => r.replies.isNotEmpty)
             .toList();
       case ReviewFilterOption.reported:
         filtered = filtered
@@ -101,7 +100,7 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
   int _calculatePercentageAnswered() {
     if (_reviewController.reviews.isEmpty) return 0;
     final answered = _reviewController.reviews
-        .where((r) => _businessResponses.containsKey(r.id))
+        .where((r) => r.replies.isNotEmpty)
         .length;
     return ((answered / _reviewController.reviews.length) * 100).toInt();
   }
@@ -118,7 +117,16 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
   Future<void> _submitResponse(ReviewModel review, String response) async {
     if (response.trim().isEmpty) return;
 
-    setState(() => _businessResponses[review.id] = response.trim());
+    try {
+      await _reviewController.addReplyToThread(review.id, response.trim(), 'owner');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+      return;
+    }
 
     if (!mounted) return;
 
@@ -371,12 +379,10 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final review = filteredReviews[index];
-                  final hasResponse = _businessResponses.containsKey(review.id);
                   final isReported = _reportedReviews.contains(review.id);
 
                   return _ReviewManagementCard(
                     review: review,
-                    businessResponse: _businessResponses[review.id],
                     isReported: isReported,
                     onSubmitResponse: (response) =>
                         _submitResponse(review, response),
@@ -454,14 +460,12 @@ class _StatSmallCard extends StatelessWidget {
 class _ReviewManagementCard extends StatefulWidget {
   const _ReviewManagementCard({
     required this.review,
-    required this.businessResponse,
     required this.isReported,
     required this.onSubmitResponse,
     required this.onReportReview,
   });
 
   final ReviewModel review;
-  final String? businessResponse;
   final bool isReported;
   final Function(String) onSubmitResponse;
   final VoidCallback onReportReview;
@@ -584,7 +588,7 @@ class _ReviewManagementCardState extends State<_ReviewManagementCard> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          if (widget.businessResponse != null)
+                          if (widget.review.replies.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -597,7 +601,7 @@ class _ReviewManagementCardState extends State<_ReviewManagementCard> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'Réponse publiée',
+                                '${widget.review.replies.length} réponse(s)',
                                 style: textTheme.labelSmall?.copyWith(
                                   color: colorScheme.tertiary,
                                   fontWeight: FontWeight.w700,
@@ -636,50 +640,66 @@ class _ReviewManagementCardState extends State<_ReviewManagementCard> {
 
             const SizedBox(height: 16),
 
-            // Business Response (if exists)
-            if (widget.businessResponse != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            // Threaded Replies
+            if (widget.review.replies.isNotEmpty) ...[
+              ...widget.review.replies.map((reply) {
+                final isOwner = reply.senderRole == 'owner';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isOwner
+                          ? colorScheme.primaryContainer.withValues(alpha: 0.2)
+                          : colorScheme.secondaryContainer.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isOwner
+                            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+                            : colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.business_rounded,
-                          size: 16,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Réponse de l\'entreprise',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: colorScheme.onPrimaryContainer,
+                        Row(
+                          children: [
+                            Icon(
+                              isOwner ? Icons.business_rounded : Icons.person_rounded,
+                              size: 16,
+                              color: isOwner
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSecondaryContainer,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isOwner ? 'Réponse de l\'entreprise' : 'Réponse du client',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: isOwner
+                                    ? colorScheme.onPrimaryContainer
+                                    : colorScheme.onSecondaryContainer,
                                 fontWeight: FontWeight.w700,
                               ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          reply.message,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.businessResponse!,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }).toList(),
               const SizedBox(height: 12),
-            ] else ...[
+            ],
+
+            // Always allow response form (to continue thread)
+            if (widget.review.replies.isEmpty || widget.review.replies.last.senderRole == 'client') ...[
               // Response Form (if no response yet)
               Container(
                 padding: const EdgeInsets.all(12),

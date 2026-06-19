@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/business_model.dart';
 import '../../models/review_model.dart';
+import '../../repositories/review_repository.dart';
 import '../../services/maps_sim_service.dart';
 import '../../services/supabase_data_service.dart';
 
@@ -572,8 +573,128 @@ class _ReviewTile extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (review.replies.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  ...review.replies.map((reply) {
+                    final isOwner = reply.senderRole == 'owner';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isOwner
+                              ? colorScheme.surfaceContainerHighest.withOpacity(0.5)
+                              : colorScheme.secondaryContainer.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isOwner
+                                ? colorScheme.primary.withOpacity(0.2)
+                                : colorScheme.secondary.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  isOwner ? Icons.reply_rounded : Icons.person_rounded, 
+                                  size: 16, 
+                                  color: isOwner ? colorScheme.primary : colorScheme.secondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isOwner ? 'Réponse de l\'entreprise' : 'Votre réponse',
+                                  style: textTheme.labelMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isOwner ? colorScheme.primary : colorScheme.secondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              reply.message,
+                              style: textTheme.bodyMedium?.copyWith(
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ],
+                // Add reply button if last message is from owner and currentUser is the author
+                if (review.isCurrentUser && (review.replies.isEmpty || review.replies.last.senderRole == 'owner')) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _showReplyDialog(context),
+                      icon: const Icon(Icons.reply_rounded, size: 16),
+                      label: const Text('Répondre'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReplyDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Répondre'),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Votre réponse...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (controller.text.trim().isEmpty) return;
+              final msg = controller.text.trim();
+              Navigator.pop(context);
+              
+              try {
+                final repo = ReviewRepository();
+                final newReply = ReviewReplyModel(
+                  senderRole: 'client',
+                  message: msg,
+                  createdAt: DateTime.now(),
+                );
+                await repo.updateReplies(review.id, [...review.replies, newReply]);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Réponse envoyée. Actualisez la page.')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erreur: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Envoyer'),
           ),
         ],
       ),

@@ -459,22 +459,38 @@ class _ReviewFormSheetState extends State<_ReviewFormSheet> {
     }
 
     setState(() => _isSaving = true);
-    await widget.onSubmit(
-      rating: _rating,
-      comment: _commentController.text,
-      photoUrls: _photoUrls,
-    );
+    
+    try {
+      await widget.onSubmit(
+        rating: _rating,
+        comment: _commentController.text,
+        photoUrls: _photoUrls,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          widget.review == null ? 'Avis publie.' : 'Avis mis a jour.',
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.review == null ? 'Avis publié.' : 'Avis mis à jour.',
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   Future<void> _pickAndUploadPhoto() async {

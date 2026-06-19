@@ -1,3 +1,31 @@
+class ReviewReplyModel {
+  const ReviewReplyModel({
+    required this.senderRole,
+    required this.message,
+    required this.createdAt,
+  });
+
+  final String senderRole; // 'owner' or 'client'
+  final String message;
+  final DateTime createdAt;
+
+  factory ReviewReplyModel.fromJson(Map<String, dynamic> json) {
+    return ReviewReplyModel(
+      senderRole: json['senderRole']?.toString() ?? 'owner',
+      message: json['message']?.toString() ?? '',
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'senderRole': senderRole,
+      'message': message,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}
+
 class ReviewModel {
   const ReviewModel({
     required this.id,
@@ -9,6 +37,7 @@ class ReviewModel {
     required this.comment,
     required this.photoUrls,
     required this.createdAt,
+    this.replies = const [],
     this.isCurrentUser = false,
   });
 
@@ -21,6 +50,7 @@ class ReviewModel {
   final String comment;
   final List<String> photoUrls;
   final DateTime createdAt;
+  final List<ReviewReplyModel> replies;
   final bool isCurrentUser;
 
   ReviewModel copyWith({
@@ -33,6 +63,7 @@ class ReviewModel {
     String? comment,
     List<String>? photoUrls,
     DateTime? createdAt,
+    List<ReviewReplyModel>? replies,
     bool? isCurrentUser,
   }) {
     return ReviewModel(
@@ -45,6 +76,7 @@ class ReviewModel {
       comment: comment ?? this.comment,
       photoUrls: photoUrls ?? this.photoUrls,
       createdAt: createdAt ?? this.createdAt,
+      replies: replies ?? this.replies,
       isCurrentUser: isCurrentUser ?? this.isCurrentUser,
     );
   }
@@ -66,6 +98,7 @@ class ReviewModel {
         return e.toString();
       }).toList() ?? [],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      replies: (json['replies'] as List?)?.map((e) => ReviewReplyModel.fromJson(e as Map<String, dynamic>)).toList() ?? [],
       isCurrentUser: currentUserId != null && currentUserId == uId,
     );
   }
@@ -78,6 +111,7 @@ class ReviewModel {
       'rating': rating,
       'comment': comment,
       'photo_urls': photoUrls,
+      'replies': replies.map((e) => e.toJson()).toList(),
     };
   }
 }

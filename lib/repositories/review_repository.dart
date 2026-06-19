@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/review_model.dart';
 
@@ -46,7 +47,10 @@ class ReviewRepository {
       'photo_urls': photoUrls,
     }).select('*, profiles(full_name, avatar_url)').single();
 
-    await _updateBusinessStats(businessId);
+    // Mettre à jour les stats en arrière-plan sans bloquer l'UI
+    _updateBusinessStats(businessId).catchError((e) {
+      debugPrint('Erreur lors de la mise à jour des stats: $e');
+    });
 
     return ReviewModel.fromJson(response, currentUserId: currentUserId);
   }
@@ -66,7 +70,9 @@ class ReviewRepository {
     }).eq('id', reviewId).select('*, profiles(full_name, avatar_url)').single();
 
     final businessId = response['business_id'] as String;
-    await _updateBusinessStats(businessId);
+    _updateBusinessStats(businessId).catchError((e) {
+      debugPrint('Erreur lors de la mise à jour des stats: $e');
+    });
 
     return ReviewModel.fromJson(response, currentUserId: currentUserId);
   }
@@ -77,6 +83,19 @@ class ReviewRepository {
     
     await _supabase.from('reviews').delete().eq('id', reviewId);
     
-    await _updateBusinessStats(businessId);
+    _updateBusinessStats(businessId).catchError((e) {
+      debugPrint('Erreur lors de la mise à jour des stats: $e');
+    });
+  }
+
+  Future<ReviewModel> updateReplies(String reviewId, List<ReviewReplyModel> replies) async {
+    final currentUserId = _supabase.auth.currentUser?.id;
+    final repliesJson = replies.map((e) => e.toJson()).toList();
+    
+    final response = await _supabase.from('reviews').update({
+      'replies': repliesJson,
+    }).eq('id', reviewId).select('*, profiles(full_name, avatar_url)').single();
+
+    return ReviewModel.fromJson(response, currentUserId: currentUserId);
   }
 }
