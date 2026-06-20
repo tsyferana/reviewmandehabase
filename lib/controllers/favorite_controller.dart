@@ -35,9 +35,10 @@ class FavoriteController extends ChangeNotifier {
 
     try {
       await _favoriteRepository.removeFavorite(businessId);
-    } catch (_) {
+    } catch (e) {
       _favorites = previousFavorites;
       notifyListeners();
+      throw 'Erreur: ${e.toString()}';
     }
   }
 
@@ -48,15 +49,20 @@ class FavoriteController extends ChangeNotifier {
 
       try {
         await _favoriteRepository.addFavorite(business.id);
-      } catch (_) {
+      } catch (e) {
         _favorites.removeWhere((b) => b.id == business.id);
         notifyListeners();
+        throw 'Erreur: ${e.toString()}';
       }
     }
   }
 
   Future<bool> isFavorite(String businessId) async {
     return await _favoriteRepository.isFavorite(businessId);
+  }
+
+  bool isFavoriteLocal(String businessId) {
+    return _favorites.any((b) => b.id == businessId);
   }
 
   void _setLoading(bool value) {

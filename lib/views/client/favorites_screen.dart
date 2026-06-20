@@ -4,60 +4,56 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../controllers/favorite_controller.dart';
+import '../../controllers/favorite_providers.dart';
 import '../../models/business_model.dart';
-import '../../repositories/favorite_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum _FavoriteViewMode { list, grid }
 
-class FavoritesScreen extends StatefulWidget {
+class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
   static const routeName = '/favorites';
 
   @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
+  ConsumerState<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
-class _FavoritesScreenState extends State<FavoritesScreen> {
-  late final FavoriteController _favoriteController;
+class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   _FavoriteViewMode _viewMode = _FavoriteViewMode.list;
 
   @override
   void initState() {
     super.initState();
-    _favoriteController = FavoriteController(FavoriteRepository());
-    _favoriteController.addListener(_onFavoritesChanged);
-    unawaited(_favoriteController.loadFavorites());
-  }
-
-  @override
-  void dispose() {
-    _favoriteController
-      ..removeListener(_onFavoritesChanged)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _onFavoritesChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(favoriteControllerProvider).loadFavorites();
+      }
+    });
   }
 
   Future<void> _removeFavorite(BusinessModel business) async {
-    await _favoriteController.removeFavorite(business.id);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${business.name} retire des favoris.')),
-    );
+    try {
+      await ref.read(favoriteControllerProvider).removeFavorite(business.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${business.name} retiré des favoris.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final favorites = _favoriteController.favorites;
+    final favoriteController = ref.watch(favoriteControllerProvider);
+    final favorites = favoriteController.favorites;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,8 +82,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _favoriteController.refresh,
-        child: _favoriteController.isLoading
+        onRefresh: favoriteController.refresh,
+        child: favoriteController.isLoading
             ? const _FavoritesLoading()
             : favorites.isEmpty
             ? const _EmptyFavoritesState()

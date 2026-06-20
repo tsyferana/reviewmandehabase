@@ -51,9 +51,14 @@ class FavoriteRepository {
         'user_id': currentUserId,
         'business_id': businessId,
       });
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        // Ignore si l'entreprise est déjà en favori
+        return;
+      }
+      rethrow;
     } catch (e) {
-      // Ignore if it's a unique constraint violation
-      // It means it's already favorited
+      rethrow;
     }
   }
 

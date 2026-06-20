@@ -8,13 +8,14 @@ import 'package:intl/intl.dart';
 
 import '../../models/business_model.dart';
 import '../../models/review_model.dart';
-import '../../repositories/favorite_repository.dart';
+import '../../controllers/favorite_providers.dart';
 import '../../repositories/review_repository.dart';
 import '../../services/maps_sim_service.dart';
 import '../../services/supabase_data_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class BusinessDetailScreen extends StatefulWidget {
+class BusinessDetailScreen extends ConsumerStatefulWidget {
   const BusinessDetailScreen({super.key, this.businessId = 'biz-001'});
 
   static const routeName = '/business/:id';
@@ -22,18 +23,16 @@ class BusinessDetailScreen extends StatefulWidget {
   final String businessId;
 
   @override
-  State<BusinessDetailScreen> createState() => _BusinessDetailScreenState();
+  ConsumerState<BusinessDetailScreen> createState() => _BusinessDetailScreenState();
 }
 
-class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
+class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
   final _dataService = SupabaseDataService();
   final _mapsService = MapsSimService();
-  final _favoriteRepo = FavoriteRepository();
 
   BusinessModel? _business;
   List<ReviewModel> _reviews = [];
   bool _isLoading = true;
-  bool _isFavorite = false;
 
   RealtimeChannel? _businessChannel;
   RealtimeChannel? _reviewsChannel;
@@ -42,8 +41,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   void initState() {
     super.initState();
     unawaited(_loadDetail());
-    unawaited(_checkFavorite());
     _setupRealtime();
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(favoriteControllerProvider).loadFavorites();
+      }
+    });
   }
 
   void _setupRealtime() {
@@ -89,19 +92,36 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
     super.dispose();
   }
 
-  Future<void> _checkFavorite() async {
-    final isFav = await _favoriteRepo.isFavorite(widget.businessId);
-    if (!mounted) return;
-    setState(() => _isFavorite = isFav);
-  }
-
   Future<void> _toggleFavorite() async {
-    final newValue = !_isFavorite;
-    setState(() => _isFavorite = newValue);
-    if (newValue) {
-      await _favoriteRepo.addFavorite(widget.businessId);
-    } else {
-      await _favoriteRepo.removeFavorite(widget.businessId);
+    final favoriteController = ref.read(favoriteControllerProvider);
+    final business = _business;
+    if (business == null) return;
+    
+    try {
+      if (favoriteController.isFavoriteLocal(widget.businessId)) {
+        await favoriteController.removeFavorite(widget.businessId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Retiré des favoris.')),
+          );
+        }
+      } else {
+        await favoriteController.addFavorite(business);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ajouté aux favoris.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -152,7 +172,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                   _BusinessHeader(business: business),
                   const SizedBox(height: 18),
                   _ActionButtons(
-                    isFavorite: _isFavorite,
+                    isFavorite: ref.watch(favoriteControllerProvider).isFavoriteLocal(widget.businessId),
                     onFavoriteToggle: _toggleFavorite,
                   ),
                   const SizedBox(height: 26),
