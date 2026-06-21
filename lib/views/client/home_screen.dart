@@ -194,7 +194,7 @@ class _CategoryCarousel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return SizedBox(
-      height: 116,
+      height: 124,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
@@ -361,33 +361,19 @@ class _BusinessCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(5, (index) {
-                            return Icon(
-                              index < business.rating.round()
-                                  ? Icons.star_rounded
-                                  : Icons.star_border_rounded,
-                              color: Colors.amber,
-                              size: 14,
-                            );
-                          }),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          business.rating.toStringAsFixed(1),
-                          style: textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                        Icon(
+                          Icons.star_rounded,
+                          color: colorScheme.secondary,
+                          size: 16,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            '(${business.reviewCount})',
+                            '${business.rating.toStringAsFixed(1)} (${business.reviewCount} avis)',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                            style: textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),

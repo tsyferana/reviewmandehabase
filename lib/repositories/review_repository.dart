@@ -5,21 +5,6 @@ import '../models/review_model.dart';
 class ReviewRepository {
   final _supabase = Supabase.instance.client;
 
-  Future<void> _updateBusinessStats(String businessId) async {
-    final response = await _supabase.from('reviews').select('rating').eq('business_id', businessId);
-    final ratings = (response as List).map((e) => e['rating'] as num).toList();
-    
-    final reviewCount = ratings.length;
-    final avgRating = reviewCount > 0 
-        ? ratings.reduce((a, b) => a + b) / reviewCount 
-        : 0.0;
-
-    await _supabase.from('businesses').update({
-      'rating': avgRating,
-      'review_count': reviewCount,
-    }).eq('id', businessId);
-  }
-
   Future<List<ReviewModel>> getReviewsForBusiness(String businessId) async {
     final currentUserId = _supabase.auth.currentUser?.id;
     final response = await _supabase.from('reviews')
@@ -47,10 +32,8 @@ class ReviewRepository {
       'photo_urls': photoUrls,
     }).select('*, profiles(full_name, avatar_url)').single();
 
-    // Mettre à jour les stats en arrière-plan sans bloquer l'UI
-    _updateBusinessStats(businessId).catchError((e) {
-      debugPrint('Erreur lors de la mise à jour des stats: $e');
-    });
+    // Les statistiques (rating et review_count) de l'entreprise sont
+    // automatiquement mises à jour par un trigger sur Supabase !
 
     return ReviewModel.fromJson(response, currentUserId: currentUserId);
   }
@@ -69,10 +52,7 @@ class ReviewRepository {
       'photo_urls': photoUrls,
     }).eq('id', reviewId).select('*, profiles(full_name, avatar_url)').single();
 
-    final businessId = response['business_id'] as String;
-    _updateBusinessStats(businessId).catchError((e) {
-      debugPrint('Erreur lors de la mise à jour des stats: $e');
-    });
+    // Les statistiques de l'entreprise sont mises à jour par un trigger sur Supabase !
 
     return ReviewModel.fromJson(response, currentUserId: currentUserId);
   }
@@ -83,9 +63,7 @@ class ReviewRepository {
     
     await _supabase.from('reviews').delete().eq('id', reviewId);
     
-    _updateBusinessStats(businessId).catchError((e) {
-      debugPrint('Erreur lors de la mise à jour des stats: $e');
-    });
+    // La mise à jour des stats est gérée par le trigger Supabase
   }
 
   Future<ReviewModel> updateReplies(String reviewId, List<ReviewReplyModel> replies) async {

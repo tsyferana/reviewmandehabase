@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/business_model.dart';
 import '../models/category_model.dart';
@@ -13,12 +14,42 @@ class SupabaseDataService {
 
   Future<List<BusinessModel>> getBusinesses() async {
     final response = await _supabase.from('businesses').select('*, categories(name)').eq('status', 'approved');
+    
+    final businessIds = response.map((e) => e['id'] as String).toList();
+    if (businessIds.isNotEmpty) {
+      try {
+        final reviewsResponse = await _supabase.from('reviews').select('business_id, rating').inFilter('business_id', businessIds);
+        final reviewsMap = <String, List<num>>{};
+        for (var r in reviewsResponse) {
+          reviewsMap.putIfAbsent(r['business_id'] as String, () => []).add(r['rating'] as num);
+        }
+        for (var biz in response) {
+          final bizReviews = reviewsMap[biz['id'] as String] ?? [];
+          final reviewCount = bizReviews.length;
+          biz['rating'] = reviewCount > 0 ? bizReviews.reduce((a, b) => a + b) / reviewCount : 0.0;
+          biz['review_count'] = reviewCount;
+        }
+      } catch (e) {
+        debugPrint('Fallback rating fetch failed: $e');
+      }
+    }
+    
     return response.map((e) => BusinessModel.fromJson(e)).toList();
   }
 
   Future<BusinessModel?> getBusinessById(String id) async {
     final response = await _supabase.from('businesses').select('*, categories(name)').eq('id', id).maybeSingle();
     if (response == null) return null;
+    
+    try {
+      final reviewsResponse = await _supabase.from('reviews').select('rating').eq('business_id', id);
+      final reviewCount = reviewsResponse.length;
+      response['rating'] = reviewCount > 0 ? reviewsResponse.map((r) => r['rating'] as num).reduce((a, b) => a + b) / reviewCount : 0.0;
+      response['review_count'] = reviewCount;
+    } catch (e) {
+      debugPrint('Fallback rating fetch failed: $e');
+    }
+    
     return BusinessModel.fromJson(response);
   }
 
@@ -140,7 +171,16 @@ class SupabaseDataService {
         .limit(1);
         
     if (response.isNotEmpty) {
-      return response.first as Map<String, dynamic>;
+      final biz = response.first as Map<String, dynamic>;
+      try {
+        final reviewsResponse = await _supabase.from('reviews').select('rating').eq('business_id', biz['id']);
+        final reviewCount = reviewsResponse.length;
+        biz['rating'] = reviewCount > 0 ? reviewsResponse.map((r) => r['rating'] as num).reduce((a, b) => a + b) / reviewCount : 0.0;
+        biz['review_count'] = reviewCount;
+      } catch (e) {
+        debugPrint('Fallback rating fetch failed: $e');
+      }
+      return biz;
     }
     return null;
   }

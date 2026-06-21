@@ -23,7 +23,8 @@ class BusinessDetailScreen extends ConsumerStatefulWidget {
   final String businessId;
 
   @override
-  ConsumerState<BusinessDetailScreen> createState() => _BusinessDetailScreenState();
+  ConsumerState<BusinessDetailScreen> createState() =>
+      _BusinessDetailScreenState();
 }
 
 class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
@@ -96,21 +97,21 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     final favoriteController = ref.read(favoriteControllerProvider);
     final business = _business;
     if (business == null) return;
-    
+
     try {
       if (favoriteController.isFavoriteLocal(widget.businessId)) {
         await favoriteController.removeFavorite(widget.businessId);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Retiré des favoris.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Retiré des favoris.')));
         }
       } else {
         await favoriteController.addFavorite(business);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ajouté aux favoris.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ajouté aux favoris.')));
         }
       }
     } catch (e) {
@@ -129,11 +130,9 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     if (!silent) {
       setState(() => _isLoading = true);
     }
-    
+
     final business = await _dataService.getBusinessById(widget.businessId);
-    final reviews = await _dataService.getReviewsForBusiness(
-      widget.businessId,
-    );
+    final reviews = await _dataService.getReviewsForBusiness(widget.businessId);
 
     if (!mounted) return;
 
@@ -169,10 +168,12 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BusinessHeader(business: business),
+                  _BusinessHeader(business: business, reviews: _reviews),
                   const SizedBox(height: 18),
                   _ActionButtons(
-                    isFavorite: ref.watch(favoriteControllerProvider).isFavoriteLocal(widget.businessId),
+                    isFavorite: ref
+                        .watch(favoriteControllerProvider)
+                        .isFavoriteLocal(widget.businessId),
                     onFavoriteToggle: _toggleFavorite,
                   ),
                   const SizedBox(height: 26),
@@ -181,16 +182,16 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                   ),
                   const SizedBox(height: 28),
                   _AboutSection(business: business),
-                        const SizedBox(height: 24),
-                        _ServicesSection(services: business.services),
-                        const SizedBox(height: 24),
-                        _RatingSummary(business: business),
-                        const SizedBox(height: 24),
-                        _ReviewsSection(
-                          businessId: widget.businessId,
-                          reviews: _reviews,
-                        ),
-                        const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+                  _ServicesSection(services: business.services),
+                  const SizedBox(height: 24),
+                  _RatingSummary(business: business, reviews: _reviews),
+                  const SizedBox(height: 24),
+                  _ReviewsSection(
+                    businessId: widget.businessId,
+                    reviews: _reviews,
+                  ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -267,14 +268,20 @@ class _BusinessCoverAppBar extends StatelessWidget {
 }
 
 class _BusinessHeader extends StatelessWidget {
-  const _BusinessHeader({required this.business});
+  const _BusinessHeader({required this.business, required this.reviews});
 
   final BusinessModel business;
+  final List<ReviewModel> reviews;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    final totalReviews = reviews.length;
+    final averageRating = totalReviews > 0
+        ? reviews.map((r) => r.rating).reduce((a, b) => a + b) / totalReviews
+        : business.rating;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,9 +305,9 @@ class _BusinessHeader extends StatelessWidget {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _RatingStars(rating: business.rating),
+            _RatingStars(rating: averageRating),
             Text(
-              '${business.rating.toStringAsFixed(1)} (${business.reviewCount} avis)',
+              '${averageRating.toStringAsFixed(1)} ($totalReviews avis)',
               style: textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -597,14 +604,20 @@ class _ReviewsSection extends StatelessWidget {
 }
 
 class _RatingSummary extends StatelessWidget {
-  const _RatingSummary({required this.business});
+  const _RatingSummary({required this.business, required this.reviews});
 
   final BusinessModel business;
+  final List<ReviewModel> reviews;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+
+    final totalReviews = reviews.length;
+    final averageRating = totalReviews > 0
+        ? reviews.map((r) => r.rating).reduce((a, b) => a + b) / totalReviews
+        : business.rating;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -625,7 +638,7 @@ class _RatingSummary extends StatelessWidget {
           Column(
             children: [
               Text(
-                business.rating.toStringAsFixed(1),
+                averageRating.toStringAsFixed(1),
                 style: textTheme.displayMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colorScheme.primary,
@@ -635,7 +648,7 @@ class _RatingSummary extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(5, (index) {
                   return Icon(
-                    index < business.rating.round()
+                    index < averageRating.round()
                         ? Icons.star_rounded
                         : Icons.star_border_rounded,
                     color: Colors.amber,
@@ -645,7 +658,7 @@ class _RatingSummary extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${business.reviewCount} avis',
+                '$totalReviews avis',
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -653,33 +666,6 @@ class _RatingSummary extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 24),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.bolt_rounded, color: Colors.amber[600], size: 18),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Statistique en temps réel',
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Cette note moyenne globale se met à jour instantanément.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -768,7 +754,9 @@ class _ReviewTile extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isOwner
-                              ? colorScheme.surfaceContainerHighest.withOpacity(0.5)
+                              ? colorScheme.surfaceContainerHighest.withOpacity(
+                                  0.5,
+                                )
                               : colorScheme.secondaryContainer.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
@@ -783,23 +771,37 @@ class _ReviewTile extends StatelessWidget {
                             Row(
                               children: [
                                 if (isOwner)
-                                  Icon(Icons.reply_rounded, size: 16, color: colorScheme.primary)
-                                else if (reply.senderPhotoUrl != null && reply.senderPhotoUrl!.isNotEmpty)
+                                  Icon(
+                                    Icons.reply_rounded,
+                                    size: 16,
+                                    color: colorScheme.primary,
+                                  )
+                                else if (reply.senderPhotoUrl != null &&
+                                    reply.senderPhotoUrl!.isNotEmpty)
                                   CircleAvatar(
                                     radius: 10,
-                                    backgroundImage: NetworkImage(reply.senderPhotoUrl!),
+                                    backgroundImage: NetworkImage(
+                                      reply.senderPhotoUrl!,
+                                    ),
                                   )
                                 else
-                                  Icon(Icons.person_rounded, size: 16, color: colorScheme.secondary),
+                                  Icon(
+                                    Icons.person_rounded,
+                                    size: 16,
+                                    color: colorScheme.secondary,
+                                  ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    isOwner 
-                                        ? 'Réponse de l\'entreprise' 
-                                        : (reply.senderName ?? 'Réponse du client'),
+                                    isOwner
+                                        ? 'Réponse de l\'entreprise'
+                                        : (reply.senderName ??
+                                              'Réponse du client'),
                                     style: textTheme.labelMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: isOwner ? colorScheme.primary : colorScheme.secondary,
+                                      color: isOwner
+                                          ? colorScheme.primary
+                                          : colorScheme.secondary,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -867,20 +869,22 @@ class _ReviewTile extends StatelessWidget {
               if (controller.text.trim().isEmpty) return;
               final msg = controller.text.trim();
               Navigator.pop(context);
-              
+
               try {
                 final repo = ReviewRepository();
                 await repo.addReplyToReview(review.id, msg, 'client');
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Réponse envoyée. Actualisez la page.')),
+                    const SnackBar(
+                      content: Text('Réponse envoyée. Actualisez la page.'),
+                    ),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erreur: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
                 }
               }
             },
