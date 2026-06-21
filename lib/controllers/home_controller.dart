@@ -35,13 +35,11 @@ class HomeController extends AsyncNotifier<HomeState> {
       locationService.getCurrentCity(),
       dataService.getCategories(),
       dataService.getBusinesses(),
-      dataService.getUnreadNotificationsCount(),
     ]);
 
     final city = results[0] as String;
     final categories = results[1] as List<CategoryModel>;
     final businesses = results[2] as List<BusinessModel>;
-    final unreadNotificationsCount = results[3] as int;
 
     final popularBusinesses =
         businesses.where((business) => business.isPopular).toList()
@@ -53,7 +51,6 @@ class HomeController extends AsyncNotifier<HomeState> {
 
     return HomeState(
       city: city,
-      unreadNotificationsCount: unreadNotificationsCount,
       categories: categories,
       popularBusinesses: popularBusinesses,
       topRatedBusinesses: topRatedBusinesses.take(6).toList(),
@@ -65,7 +62,6 @@ class HomeController extends AsyncNotifier<HomeState> {
 class HomeState {
   const HomeState({
     required this.city,
-    required this.unreadNotificationsCount,
     required this.categories,
     required this.popularBusinesses,
     required this.topRatedBusinesses,
@@ -73,7 +69,6 @@ class HomeState {
   });
 
   final String city;
-  final int unreadNotificationsCount;
   final List<CategoryModel> categories;
   final List<BusinessModel> popularBusinesses;
   final List<BusinessModel> topRatedBusinesses;

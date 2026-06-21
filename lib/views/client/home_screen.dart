@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../controllers/home_controller.dart';
+import '../../controllers/notification_controller.dart';
 import '../../models/business_model.dart';
 import '../../models/category_model.dart';
 import '../../widgets/favorite_button.dart';
@@ -30,11 +31,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: homeState.maybeWhen(
         data: (state) => _HomeAppBar(
           city: state.city,
-          unreadNotificationsCount: state.unreadNotificationsCount,
         ),
         orElse: () => const _HomeAppBar(
           city: 'Antananarivo',
-          unreadNotificationsCount: 0,
         ),
       ),
       body: homeState.when(
@@ -89,22 +88,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+class _HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const _HomeAppBar({
     required this.city,
-    required this.unreadNotificationsCount,
   });
 
   final String city;
-  final int unreadNotificationsCount;
 
   @override
   Size get preferredSize => const Size.fromHeight(72);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final unreadNotificationsCount = ref.watch(unreadNotificationsCountProvider);
 
     return AppBar(
       automaticallyImplyLeading: false,

@@ -15,6 +15,7 @@ import 'package:review_app/views/client/home_screen.dart';
 import 'package:review_app/views/client/search_screen.dart';
 import 'package:review_app/views/client/favorites_screen.dart';
 import 'package:review_app/views/client/profile_screen.dart';
+import 'package:review_app/views/client/notifications_screen.dart';
 import 'package:review_app/views/client/business_detail_screen.dart';
 import 'package:review_app/views/business/business_create_screen.dart';
 import 'package:review_app/views/business/business_dashboard_screen.dart';
@@ -520,8 +521,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/notifications',
-            builder: (_, __) =>
-                const Scaffold(body: Center(child: Text("Notifications"))),
+            builder: (_, __) => const NotificationsScreen(),
           ),
           GoRoute(
             path: '/home/business/:id',

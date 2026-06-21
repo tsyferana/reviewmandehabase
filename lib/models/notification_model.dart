@@ -1,7 +1,9 @@
 enum NotificationType {
   review,
-  favorite,
-  promotion,
+  reply,
+  business_request,
+  approval,
+  rejection,
   report,
   system,
 }
@@ -9,63 +11,76 @@ enum NotificationType {
 class NotificationModel {
   const NotificationModel({
     required this.id,
+    required this.userId,
     required this.type,
     required this.title,
     required this.message,
     required this.createdAt,
     required this.isRead,
-    this.route,
+    this.relatedId,
   });
 
   final String id;
+  final String userId;
   final NotificationType type;
   final String title;
   final String message;
   final DateTime createdAt;
   final bool isRead;
-  final String? route;
+  final String? relatedId;
 
   NotificationModel copyWith({
     String? id,
+    String? userId,
     NotificationType? type,
     String? title,
     String? message,
     DateTime? createdAt,
     bool? isRead,
-    String? route,
+    String? relatedId,
   }) {
     return NotificationModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       type: type ?? this.type,
       title: title ?? this.title,
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
-      route: route ?? this.route,
+      relatedId: relatedId ?? this.relatedId,
     );
   }
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    NotificationType parsedType;
+    try {
+      parsedType = NotificationType.values.byName(json['type'] as String);
+    } catch (_) {
+      parsedType = NotificationType.system;
+    }
+
     return NotificationModel(
       id: json['id'] as String,
-      type: NotificationType.values.byName(json['type'] as String),
+      userId: json['user_id'] as String,
+      type: parsedType,
       title: json['title'] as String,
       message: json['message'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      isRead: json['isRead'] as bool,
-      route: json['route'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      isRead: json['is_read'] as bool? ?? false,
+      relatedId: json['related_id'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'type': type.name,
       'title': title,
       'message': message,
-      'createdAt': createdAt.toIso8601String(),
-      'isRead': isRead,
-      'route': route,
+      'created_at': createdAt.toIso8601String(),
+      'is_read': isRead,
+      'related_id': relatedId,
     };
   }
 }

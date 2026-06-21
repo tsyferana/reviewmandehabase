@@ -1,132 +1,44 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../controllers/notification_controller.dart';
 import '../../models/notification_model.dart';
-import '../../repositories/notification_repository.dart';
 
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   static const routeName = '/notifications';
 
-  @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
-}
+  Future<void> _handleTap(BuildContext context, WidgetRef ref, NotificationModel notification) async {
+    await ref.read(notificationControllerProvider).markAsRead(notification.id);
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  late final NotificationController _notificationController;
+    if (!context.mounted) return;
 
-  @override
-  void initState() {
-    super.initState();
-    _notificationController = NotificationController(NotificationRepository());
-    _notificationController.addListener(_onNotificationsChanged);
-    unawaited(_notificationController.loadNotifications());
-  }
-
-  @override
-  void dispose() {
-    _notificationController
-      ..removeListener(_onNotificationsChanged)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _onNotificationsChanged() {
-    if (mounted) {
-      setState(() {});
+    if (notification.relatedId != null) {
+      if (notification.type == NotificationType.review || notification.type == NotificationType.reply) {
+        context.go('/business/${notification.relatedId}');
+      } else if (notification.type == NotificationType.business_request) {
+        // Assume admins go to their dashboard
+        context.go('/admin/dashboard');
+      } else if (notification.type == NotificationType.approval || notification.type == NotificationType.rejection) {
+        context.go('/business-dashboard');
+      }
     }
   }
 
-  Future<void> _handleTap(NotificationModel notification) async {
-    await _notificationController.markAsRead(notification.id);
+  Future<void> _deleteNotification(BuildContext context, WidgetRef ref, NotificationModel notification) async {
+    await ref.read(notificationControllerProvider).deleteNotification(notification.id);
 
-    if (!mounted) return;
-
-    final route = notification.route;
-    if (route != null) {
-      context.go(route);
-    }
-  }
-
-  Future<void> _deleteNotification(NotificationModel notification) async {
-    await _notificationController.deleteNotification(notification.id);
-
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Notification supprimee.')),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final notifications = _notificationController.notifications;
-    final groups = _groupNotifications(notifications);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          TextButton(
-            onPressed: notifications.any((notification) => !notification.isRead)
-                ? _notificationController.markAllAsRead
-                : null,
-            child: const Text('Tout marquer comme lu'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: _notificationController.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : notifications.isEmpty
-              ? const _EmptyNotificationsState()
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  children: [
-                    for (final entry in groups.entries) ...[
-                      if (entry.value.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
-                          child: Text(
-                            entry.key,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                        ...entry.value.map(
-                          (notification) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Dismissible(
-                              key: ValueKey(notification.id),
-                              direction: DismissDirection.endToStart,
-                              background: const _NotificationDismissBackground(),
-                              onDismissed: (_) {
-                                _deleteNotification(notification);
-                              },
-                              child: _NotificationCard(
-                                notification: notification,
-                                onTap: () => _handleTap(notification),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
-    );
-  }
-
-  Map<String, List<NotificationModel>> _groupNotifications(
-    List<NotificationModel> notifications,
-  ) {
+  Map<String, List<NotificationModel>> _groupNotifications(List<NotificationModel> notifications) {
     final now = DateTime.now();
     final today = <NotificationModel>[];
     final thisWeek = <NotificationModel>[];
@@ -149,6 +61,76 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'Plus ancien': older,
     };
   }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationsAsync = ref.watch(notificationsStreamProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notifications'),
+        actions: [
+          notificationsAsync.maybeWhen(
+            data: (notifications) {
+              final hasUnread = notifications.any((n) => !n.isRead);
+              return TextButton(
+                onPressed: hasUnread
+                    ? () => ref.read(notificationControllerProvider).markAllAsRead()
+                    : null,
+                child: const Text('Tout marquer comme lu'),
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: notificationsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Erreur: $err')),
+        data: (notifications) {
+          if (notifications.isEmpty) return const _EmptyNotificationsState();
+
+          final groups = _groupNotifications(notifications);
+
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              for (final entry in groups.entries) ...[
+                if (entry.value.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+                    child: Text(
+                      entry.key,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  ...entry.value.map(
+                    (notification) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Dismissible(
+                        key: ValueKey(notification.id),
+                        direction: DismissDirection.endToStart,
+                        background: const _NotificationDismissBackground(),
+                        onDismissed: (_) => _deleteNotification(context, ref, notification),
+                        child: _NotificationCard(
+                          notification: notification,
+                          onTap: () => _handleTap(context, ref, notification),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _NotificationCard extends StatelessWidget {
@@ -164,7 +146,7 @@ class _NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final time = DateFormat('HH:mm').format(notification.createdAt);
+    final time = DateFormat('HH:mm').format(notification.createdAt.toLocal());
 
     return Card(
       elevation: 0,
@@ -246,11 +228,15 @@ class _NotificationCard extends StatelessWidget {
   IconData _iconFor(NotificationType type) {
     switch (type) {
       case NotificationType.review:
-        return Icons.rate_review_rounded;
-      case NotificationType.favorite:
-        return Icons.favorite_rounded;
-      case NotificationType.promotion:
-        return Icons.local_offer_rounded;
+        return Icons.star_rounded;
+      case NotificationType.reply:
+        return Icons.reply_rounded;
+      case NotificationType.business_request:
+        return Icons.business_center_rounded;
+      case NotificationType.approval:
+        return Icons.check_circle_rounded;
+      case NotificationType.rejection:
+        return Icons.cancel_rounded;
       case NotificationType.report:
         return Icons.flag_rounded;
       case NotificationType.system:
@@ -263,10 +249,14 @@ class _NotificationCard extends StatelessWidget {
     switch (type) {
       case NotificationType.review:
         return colorScheme.primaryContainer;
-      case NotificationType.favorite:
+      case NotificationType.reply:
         return colorScheme.tertiaryContainer;
-      case NotificationType.promotion:
+      case NotificationType.business_request:
         return colorScheme.secondaryContainer;
+      case NotificationType.approval:
+        return Colors.green.withValues(alpha: 0.2);
+      case NotificationType.rejection:
+        return colorScheme.errorContainer;
       case NotificationType.report:
         return colorScheme.errorContainer;
       case NotificationType.system:
@@ -334,7 +324,7 @@ class _EmptyNotificationsState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Les mises a jour importantes apparaitront ici.',
+              'Les mises à jour importantes apparaîtront ici.',
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,

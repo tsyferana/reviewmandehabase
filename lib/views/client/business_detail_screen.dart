@@ -185,7 +185,6 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                   const SizedBox(height: 24),
                   _ServicesSection(services: business.services),
                   const SizedBox(height: 24),
-                  _RatingSummary(business: business, reviews: _reviews),
                   const SizedBox(height: 24),
                   _ReviewsSection(
                     businessId: widget.businessId,
@@ -599,75 +598,6 @@ class _ReviewsSection extends StatelessWidget {
         else
           ...reviews.map((review) => _ReviewTile(review: review)),
       ],
-    );
-  }
-}
-
-class _RatingSummary extends StatelessWidget {
-  const _RatingSummary({required this.business, required this.reviews});
-
-  final BusinessModel business;
-  final List<ReviewModel> reviews;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final totalReviews = reviews.length;
-    final averageRating = totalReviews > 0
-        ? reviews.map((r) => r.rating).reduce((a, b) => a + b) / totalReviews
-        : business.rating;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Text(
-                averageRating.toStringAsFixed(1),
-                style: textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: colorScheme.primary,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(5, (index) {
-                  return Icon(
-                    index < averageRating.round()
-                        ? Icons.star_rounded
-                        : Icons.star_border_rounded,
-                    color: Colors.amber,
-                    size: 20,
-                  );
-                }),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$totalReviews avis',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 24),
-        ],
-      ),
     );
   }
 }
