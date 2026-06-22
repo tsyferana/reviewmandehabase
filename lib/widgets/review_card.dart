@@ -12,6 +12,7 @@ class ReviewCard extends StatelessWidget {
     this.photos = const [],
     this.onTap,
     this.onLikeTap,
+    this.onReportTap,
     this.isLiked = false,
     this.likeCount = 0,
   });
@@ -24,6 +25,7 @@ class ReviewCard extends StatelessWidget {
   final List<String> photos;
   final VoidCallback? onTap;
   final VoidCallback? onLikeTap;
+  final VoidCallback? onReportTap;
   final bool isLiked;
   final int likeCount;
 
@@ -76,6 +78,14 @@ class ReviewCard extends StatelessWidget {
                     ),
                   ),
                   RatingStars(rating: rating, size: 14),
+                  if (onReportTap != null)
+                    IconButton(
+                      icon: const Icon(Icons.flag_outlined, size: 18),
+                      color: colorScheme.onSurfaceVariant,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: onReportTap,
+                    ),
                 ],
               ),
               const SizedBox(height: 10),

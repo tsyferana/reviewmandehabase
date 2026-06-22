@@ -5,9 +5,12 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/notification_controller.dart';
 import '../../models/notification_model.dart';
+import '../../routes/app_router.dart' as router;
 
 class NotificationsScreen extends ConsumerWidget {
-  const NotificationsScreen({super.key});
+  const NotificationsScreen({super.key, this.isAdmin = false});
+
+  final bool isAdmin;
 
   static const routeName = '/notifications';
 
@@ -20,16 +23,29 @@ class NotificationsScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
 
+    final authRole = ref.read(router.authStateProvider).userRole;
+
     if (notification.relatedId != null) {
       if (notification.type == NotificationType.review ||
           notification.type == NotificationType.reply) {
-        context.go('/business/${notification.relatedId}');
+        if (authRole == 'business') {
+          context.go('/business/reviews');
+        } else {
+          context.go('/home/business/${notification.relatedId}');
+        }
       } else if (notification.type == NotificationType.business_request) {
-        // Assume admins go to their dashboard
-        context.go('/admin/dashboard');
+        if (authRole == 'admin') {
+          context.go('/admin/approvals');
+        } else {
+          context.go('/business/dashboard');
+        }
+      } else if (notification.type == NotificationType.report) {
+        if (authRole == 'admin') {
+          context.go('/admin/reports');
+        }
       } else if (notification.type == NotificationType.approval ||
           notification.type == NotificationType.rejection) {
-        context.go('/business-dashboard');
+        context.go('/business/dashboard');
       }
     }
   }
@@ -79,10 +95,17 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsStreamProvider);
+    final isTablet = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
+        leading: isAdmin && !isTablet
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              )
+            : null,
         actions: [
           notificationsAsync.maybeWhen(
             data: (notifications) {

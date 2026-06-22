@@ -575,17 +575,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.history_rounded,
                         title: 'Historique des avis',
                         subtitle: 'Voir vos avis publiés',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bientôt disponible')));
-                        },
+                        onTap: () => context.push('/user-reviews'),
                       ),
                       _ProfileSectionTile(
                         icon: Icons.favorite_outline_rounded,
                         title: 'Mes favoris',
                         subtitle: 'Accéder à votre liste de favoris',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bientôt disponible')));
-                        },
+                        onTap: () => context.push('/favorites'),
                       ),
                       _ProfileSectionTile(
                         icon: Icons.settings_outlined,

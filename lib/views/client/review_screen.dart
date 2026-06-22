@@ -10,6 +10,7 @@ import '../../controllers/review_controller.dart';
 import '../../models/review_model.dart';
 import '../../repositories/review_repository.dart';
 import '../../services/supabase_data_service.dart';
+import '../../widgets/report_review_dialog.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -96,39 +97,48 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   Future<void> _confirmDelete(ReviewModel review) async {
-    final shouldDelete = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          icon: const Icon(Icons.delete_outline_rounded),
-          title: const Text('Supprimer cet avis ?'),
-          content: const Text(
-            'Cette action retirera votre avis de la liste mockee.',
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'avis ?'),
+        content: const Text('Cette action est irréversible.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Annuler'),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Supprimer'),
-            ),
-          ],
-        );
-      },
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
     );
 
-    if (shouldDelete != true) {
-      return;
+    if (confirm == true && mounted) {
+      await _reviewController.deleteReview(review.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Avis supprimé.')),
+        );
+      }
     }
+  }
 
-    await _reviewController.deleteReview(review.id);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Avis supprime.')),
+  void _showReportDialog(ReviewModel review) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return ReportReviewDialog(
+          reviewId: review.id,
+          onSubmit: (type, reason) async {
+            await SupabaseDataService().createReport(review.id, type, reason);
+          },
+        );
+      },
     );
   }
 
@@ -181,6 +191,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                 : null,
                             onDelete: review.isCurrentUser
                                 ? () => _confirmDelete(review)
+                                : null,
+                            onReport: !review.isCurrentUser
+                                ? () => _showReportDialog(review)
                                 : null,
                           ).animate(delay: (index * 45).ms).fadeIn().slideY(
                                 begin: 0.04,
@@ -286,11 +299,13 @@ class _ReviewCard extends StatelessWidget {
     required this.review,
     required this.onEdit,
     required this.onDelete,
+    this.onReport,
   });
 
   final ReviewModel review;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -356,6 +371,19 @@ class _ReviewCard extends StatelessWidget {
                       PopupMenuItem(
                         value: 'delete',
                         child: Text('Supprimer'),
+                      ),
+                    ],
+                  )
+                else if (onReport != null)
+                  PopupMenuButton<String>(
+                    tooltip: 'Actions',
+                    onSelected: (value) {
+                      if (value == 'report') onReport?.call();
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Text('Signaler'),
                       ),
                     ],
                   ),

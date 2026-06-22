@@ -8,6 +8,7 @@ import '../../controllers/review_controller.dart';
 import '../../models/review_model.dart';
 import '../../repositories/review_repository.dart';
 import '../../services/supabase_data_service.dart';
+import '../../widgets/report_review_dialog.dart';
 
 enum ReviewFilterOption { all, unanswered, answered, reported }
 
@@ -139,54 +140,20 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
   }
 
   Future<void> _reportReview(ReviewModel review) async {
-    final reason = await showDialog<String>(
+    showDialog(
       context: context,
       builder: (context) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Signaler cet avis'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Raison du signalement:'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Décrivez pourquoi vous signalez cet avis...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Signaler'),
-            ),
-          ],
+        return ReportReviewDialog(
+          reviewId: review.id,
+          onSubmit: (type, reason) async {
+            await SupabaseDataService().createReport(review.id, type, reason);
+            if (mounted) {
+              setState(() => _reportedReviews.add(review.id));
+            }
+          },
         );
       },
     );
-
-    if (reason != null && reason.isNotEmpty) {
-      setState(() => _reportedReviews.add(review.id));
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Avis signalé. Notre équipe examinera ce signalement.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   @override

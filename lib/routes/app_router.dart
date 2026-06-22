@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:review_app/controllers/notification_controller.dart';
 import 'package:review_app/views/auth/onboarding_screen.dart'; // Import the actual OnboardingScreen
 
 import 'package:review_app/views/auth/login_screen.dart';
@@ -28,6 +29,7 @@ import 'package:review_app/views/admin/business_approval_screen.dart';
 import 'package:review_app/views/admin/reports_management_screen.dart';
 import 'package:review_app/views/admin/category_management_screen.dart';
 import 'package:review_app/views/client/review_screen.dart';
+import 'package:review_app/views/client/user_reviews_screen.dart';
 import 'package:review_app/widgets/app_drawer.dart';
 import 'package:review_app/widgets/custom_bottom_nav.dart';
 
@@ -324,12 +326,18 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   Widget _menu(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    int unreadCount = 0;
+    ref.watch(notificationsStreamProvider).whenData((notifications) {
+      unreadCount = notifications.where((n) => !n.isRead).length;
+    });
+
     final items = [
       ('Dashboard', Icons.dashboard, '/admin/dashboard'),
       ('Users', Icons.people, '/admin/users'),
       ('Approbations', Icons.check_circle_rounded, '/admin/approvals'),
       ('Signalements', Icons.flag_rounded, '/admin/reports'),
       ('Catégories', Icons.category_rounded, '/admin/categories'),
+      ('Notifications', Icons.notifications_rounded, '/admin/notifications'),
     ];
 
     return Column(
@@ -364,9 +372,13 @@ class _AdminShellState extends ConsumerState<AdminShell> {
             children: items.map((e) {
               final isActive = _isItemActive(context, e.$3);
               return ListTile(
-                leading: Icon(
-                  e.$2,
-                  color: isActive ? colorScheme.primary : null,
+                leading: Badge(
+                  isLabelVisible: e.$1 == 'Notifications' && unreadCount > 0,
+                  label: Text(unreadCount.toString()),
+                  child: Icon(
+                    e.$2,
+                    color: isActive ? colorScheme.primary : null,
+                  ),
                 ),
                 title: Text(
                   e.$1,
@@ -519,6 +531,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const FavoritesScreen(),
           ),
           GoRoute(
+            path: '/user-reviews',
+            builder: (_, __) => const UserReviewsScreen(),
+          ),
+          GoRoute(
             path: '/notifications',
             builder: (_, __) => const NotificationsScreen(),
           ),
@@ -588,6 +604,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/categories',
             builder: (_, __) => const CategoryManagementScreen(),
+          ),
+          GoRoute(
+            path: '/admin/notifications',
+            builder: (_, __) => const NotificationsScreen(isAdmin: true),
           ),
         ],
       ),

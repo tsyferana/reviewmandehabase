@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 
 import '../../models/business_model.dart';
 import '../../models/review_model.dart';
+import '../../services/supabase_data_service.dart';
+import '../../widgets/report_review_dialog.dart';
 import '../../controllers/favorite_providers.dart';
 import '../../repositories/review_repository.dart';
 import '../../services/maps_sim_service.dart';
@@ -596,16 +598,32 @@ class _ReviewsSection extends StatelessWidget {
         if (reviews.isEmpty)
           const Text('Aucun avis pour le moment.')
         else
-          ...reviews.map((review) => _ReviewTile(review: review)),
+          ...reviews.map((review) => _ReviewTile(
+            review: review,
+            onReport: !review.isCurrentUser
+                ? () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => ReportReviewDialog(
+                        reviewId: review.id,
+                        onSubmit: (type, reason) async {
+                          await SupabaseDataService().createReport(review.id, type, reason);
+                        },
+                      ),
+                    );
+                  }
+                : null,
+          )),
       ],
     );
   }
 }
 
 class _ReviewTile extends StatelessWidget {
-  const _ReviewTile({required this.review});
+  const _ReviewTile({required this.review, this.onReport});
 
   final ReviewModel review;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -643,6 +661,21 @@ class _ReviewTile extends StatelessWidget {
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (onReport != null)
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: PopupMenuButton<String>(
+                          padding: EdgeInsets.zero,
+                          iconSize: 18,
+                          onSelected: (val) {
+                            if (val == 'report') onReport?.call();
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 'report', child: Text('Signaler')),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 4),

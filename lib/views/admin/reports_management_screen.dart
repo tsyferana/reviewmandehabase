@@ -48,6 +48,7 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
             return _ReportModel(
               id: r['id'] ?? '',
               reviewId: r['review_id'] ?? '',
+              reviewerId: r['reviews']?['user_id'] ?? '',
               reviewerName: r['reviews']?['profiles']?['full_name'] ?? 'Inconnu',
               reviewerAvatar: r['reviews']?['profiles']?['avatar_url'] ?? 'https://i.pravatar.cc/120',
               businessName: r['reviews']?['businesses']?['name'] ?? 'Inconnu',
@@ -69,7 +70,9 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Error loading reports: $e');
+      debugPrint('Stack trace: $st');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -143,6 +146,14 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
     if (confirmed == true) {
       setState(() => _isLoading = true);
       try {
+        if (report.reviewerId.isNotEmpty) {
+          await SupabaseDataService().createAdminNotification(
+            userId: report.reviewerId,
+            title: 'Avis supprimé',
+            message: 'Votre avis sur "${report.businessName}" a été supprimé par l\'équipe de modération suite à un signalement. Merci de respecter nos conditions d\'utilisation.',
+            type: 'report',
+          );
+        }
         await SupabaseDataService().deleteReviewAdmin(report.reviewId);
         await SupabaseDataService().updateReportStatusAdmin(report.id, 'handled');
         await _loadReports();
@@ -228,6 +239,14 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
     if (confirmed == true) {
       setState(() => _isLoading = true);
       try {
+        if (report.reviewerId.isNotEmpty) {
+          await SupabaseDataService().createAdminNotification(
+            userId: report.reviewerId,
+            title: 'Avertissement de modération',
+            message: 'Votre avis sur "${report.businessName}" a été signalé. Nous avons décidé de le conserver pour l\'instant, mais merci de veiller à respecter nos règles.',
+            type: 'report',
+          );
+        }
         await SupabaseDataService().updateReportStatusAdmin(report.id, 'handled');
         await _loadReports();
         if (mounted) {
@@ -852,6 +871,7 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
 class _ReportModel {
   final String id;
   final String reviewId;
+  final String reviewerId;
   final String reviewerName;
   final String reviewerAvatar;
   final String businessName;
@@ -871,6 +891,7 @@ class _ReportModel {
   _ReportModel({
     required this.id,
     required this.reviewId,
+    required this.reviewerId,
     required this.reviewerName,
     required this.reviewerAvatar,
     required this.businessName,

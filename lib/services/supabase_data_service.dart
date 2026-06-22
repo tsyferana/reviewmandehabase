@@ -204,6 +204,20 @@ class SupabaseDataService {
     await _supabase.from('profiles').update({'account_type': type}).eq('id', user.id);
   }
 
+  // ================= CLIENT REPORTS =================
+
+  Future<void> createReport(String reviewId, String reportType, String reason) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('Non authentifié');
+    
+    await _supabase.from('reports').insert({
+      'review_id': reviewId,
+      'reporter_id': user.id,
+      'report_type': reportType,
+      'reason': reason,
+    });
+  }
+
   // ================= ADMIN METHODS =================
 
   Future<Map<String, int>> getAdminDashboardStats() async {
@@ -234,6 +248,49 @@ class SupabaseDataService {
         .order('created_at', ascending: false);
   }
 
+  Future<List<Map<String, dynamic>>> getUserReviews() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return [];
+    
+    final reviewsData = await _supabase.from('reviews')
+        .select()
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false);
+        
+    final List<Map<String, dynamic>> enrichedReviews = [];
+    for (var review in reviewsData) {
+      final mutableReview = Map<String, dynamic>.from(review);
+      if (mutableReview['business_id'] != null) {
+        try {
+          mutableReview['businesses'] = await _supabase
+              .from('businesses')
+              .select('id, name, image_url')
+              .eq('id', mutableReview['business_id'])
+              .maybeSingle();
+        } catch (e) {
+          debugPrint('Error fetching business for review: $e');
+        }
+      }
+      enrichedReviews.add(mutableReview);
+    }
+    
+    return enrichedReviews;
+  }
+
+  Future<void> createAdminNotification({
+    required String userId,
+    required String title,
+    required String message,
+    required String type,
+  }) async {
+    await _supabase.from('notifications').insert({
+      'user_id': userId,
+      'title': title,
+      'message': message,
+      'type': type,
+    });
+  }
+
   Future<void> updateBusinessStatusAdmin(String businessId, String status) async {
     await _supabase.from('businesses').update({'status': status}).eq('id', businessId);
   }
@@ -250,10 +307,59 @@ class SupabaseDataService {
     await _supabase.from('categories').delete().eq('id', categoryId);
   }
 
+  // ================= ADMIN REPORTS =================
+
   Future<List<Map<String, dynamic>>> getAllReportsAdmin() async {
-    return await _supabase.from('reports')
-        .select('*, reviews(*, businesses(name, image_url), profiles(full_name, avatar_url)), profiles(full_name, avatar_url, email)')
-        .order('created_at', ascending: false);
+    final reportsData = await _supabase.from('reports').select().order('created_at', ascending: false);
+    
+    final List<Map<String, dynamic>> enrichedReports = [];
+    for (var report in reportsData) {
+      final mutableReport = Map<String, dynamic>.from(report);
+      
+      try {
+        final reviewData = await _supabase
+            .from('reviews')
+            .select()
+            .eq('id', report['review_id'])
+            .maybeSingle();
+            
+        if (reviewData != null) {
+          final mutableReview = Map<String, dynamic>.from(reviewData);
+          
+          if (mutableReview['user_id'] != null) {
+            mutableReview['profiles'] = await _supabase
+                .from('profiles')
+                .select('full_name, avatar_url')
+                .eq('id', mutableReview['user_id'])
+                .maybeSingle();
+          }
+          
+          if (mutableReview['business_id'] != null) {
+            mutableReview['businesses'] = await _supabase
+                .from('businesses')
+                .select('name, image_url')
+                .eq('id', mutableReview['business_id'])
+                .maybeSingle();
+          }
+          
+          mutableReport['reviews'] = mutableReview;
+        }
+
+        mutableReport['profiles'] = await _supabase
+            .from('profiles')
+            .select('full_name, avatar_url, email')
+            .eq('id', report['reporter_id'])
+            .maybeSingle();
+
+        enrichedReports.add(mutableReport);
+      } catch (e) {
+        // Continue if a single report fails to enrich to avoid breaking the whole list
+        print('Error enriching report: $e');
+        enrichedReports.add(mutableReport);
+      }
+    }
+    
+    return enrichedReports;
   }
 
   Future<void> updateReportStatusAdmin(String reportId, String status) async {

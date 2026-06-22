@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_data_service.dart';
 import '../../routes/app_router.dart';
 
@@ -65,6 +66,16 @@ class _CategoryManagementScreenState
   Future<void> _loadCategories() async {
     try {
       final cats = await SupabaseDataService().getCategories();
+      final bizResp = await Supabase.instance.client.from('businesses').select('category_id');
+      
+      final bizCounts = <String, int>{};
+      for (var b in bizResp) {
+        if (b['category_id'] != null) {
+          final catId = b['category_id'].toString();
+          bizCounts[catId] = (bizCounts[catId] ?? 0) + 1;
+        }
+      }
+
       if (mounted) {
         setState(() {
           _categories = cats.map((c) => _CategoryModel(
@@ -72,7 +83,7 @@ class _CategoryManagementScreenState
             name: c.name,
             icon: c.icon,
             color: _availableColors[c.name.length % _availableColors.length],
-            businessCount: 0,
+            businessCount: bizCounts[c.id] ?? 0,
           )).toList();
           _isLoading = false;
         });
