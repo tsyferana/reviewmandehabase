@@ -118,18 +118,16 @@ class _CategoryManagementScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 5,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: _availableIcons.map((icon) {
                         final isSelected = icon == selectedIcon;
                         return InkWell(
                           onTap: () => setState(() => selectedIcon = icon),
                           child: Container(
-                            decoration: BoxDecoration(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
                               color: isSelected
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(
@@ -165,17 +163,16 @@ class _CategoryManagementScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 5,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: _availableColors.map((color) {
                         final isSelected = color == selectedColor;
                         return InkWell(
                           onTap: () => setState(() => selectedColor = color),
                           child: Container(
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               color: color,
                               borderRadius: BorderRadius.circular(8),
@@ -266,18 +263,16 @@ class _CategoryManagementScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 5,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: _availableIcons.map((icon) {
                         final isSelected = icon == selectedIcon;
                         return InkWell(
                           onTap: () => setState(() => selectedIcon = icon),
                           child: Container(
-                            decoration: BoxDecoration(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
                               color: isSelected
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(
@@ -313,17 +308,16 @@ class _CategoryManagementScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 5,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: _availableColors.map((color) {
                         final isSelected = color == selectedColor;
                         return InkWell(
                           onTap: () => setState(() => selectedColor = color),
                           child: Container(
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               color: color,
                               borderRadius: BorderRadius.circular(8),
@@ -499,152 +493,152 @@ class _CategoryManagementScreenState
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_categories.length} catégorie${_categories.length != 1 ? 's' : ''}',
-              style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = _categories.removeAt(oldIndex);
-                  _categories.insert(newIndex, item);
-                });
-              },
-              children: _categories.asMap().entries.map((entry) {
-                final index = entry.key;
-                final category = entry.value;
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_categories.length} catégorie${_categories.length != 1 ? 's' : ''}',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ReorderableListView(
+                      buildDefaultDragHandles: false,
+                      onReorder: (oldIndex, newIndex) {
+                        setState(() {
+                          if (newIndex > oldIndex) {
+                            newIndex -= 1;
+                          }
+                          final item = _categories.removeAt(oldIndex);
+                          _categories.insert(newIndex, item);
+                        });
+                      },
+                      children: _categories.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final category = entry.value;
 
-                return Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: colorScheme.outlineVariant),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Drag handle
-                            ReorderableDragStartListener(
-                              index: index,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                child: Icon(
-                                  Icons.drag_handle_rounded,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-
-                            // Icon
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: category.color.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                category.icon,
-                                color: category.color,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-
-                            // Name and count
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category.name,
-                                    style: textTheme.labelLarge?.copyWith(
-                                      fontWeight: FontWeight.w800,
+                        return Card(
+                          key: ValueKey(category.id),
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: colorScheme.outlineVariant),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Drag handle
+                                ReorderableDragStartListener(
+                                  index: index,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
                                     ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${category.businessCount} entreprise${category.businessCount != 1 ? 's' : ''}',
-                                    style: textTheme.labelSmall?.copyWith(
+                                    child: Icon(
+                                      Icons.drag_handle_rounded,
                                       color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                                ),
 
-                            // Actions
-                            PopupMenuButton<String>(
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: const [
-                                      Icon(Icons.edit_rounded, size: 18),
-                                      SizedBox(width: 8),
-                                      Text('Éditer'),
+                                // Icon
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: category.color.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    category.icon,
+                                    color: category.color,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // Name and count
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        category.name,
+                                        style: textTheme.labelLarge?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${category.businessCount} entreprise${category.businessCount != 1 ? 's' : ''}',
+                                        style: textTheme.labelSmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: const [
-                                      Icon(
-                                        Icons.delete_rounded,
-                                        size: 18,
-                                        color: Colors.red,
+
+                                // Actions
+                                PopupMenuButton<String>(
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: const [
+                                          Icon(Icons.edit_rounded, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Éditer'),
+                                        ],
                                       ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Supprimer',
-                                        style: TextStyle(color: Colors.red),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: const [
+                                          Icon(
+                                            Icons.delete_rounded,
+                                            size: 18,
+                                            color: Colors.red,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Supprimer',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
+                                  ],
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      _showEditCategoryDialog(category);
+                                    } else if (value == 'delete') {
+                                      _deleteCategory(category);
+                                    }
+                                  },
+                                  child: Icon(
+                                    Icons.more_vert_rounded,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
-                              onSelected: (value) {
-                                if (value == 'edit') {
-                                  _showEditCategoryDialog(category);
-                                } else if (value == 'delete') {
-                                  _deleteCategory(category);
-                                }
-                              },
-                              child: Icon(
-                                Icons.more_vert_rounded,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                    )
-                    .animate(key: ValueKey(category.id))
-                    .fadeIn(duration: 260.ms)
-                    .slideY(begin: 0.04);
-              }).toList(),
+                          ),
+                        ).animate(key: ValueKey(category.id)).fadeIn(duration: 260.ms).slideY(begin: 0.04);
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

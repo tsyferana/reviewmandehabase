@@ -11,34 +11,48 @@ class NotificationsScreen extends ConsumerWidget {
 
   static const routeName = '/notifications';
 
-  Future<void> _handleTap(BuildContext context, WidgetRef ref, NotificationModel notification) async {
+  Future<void> _handleTap(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationModel notification,
+  ) async {
     await ref.read(notificationControllerProvider).markAsRead(notification.id);
 
     if (!context.mounted) return;
 
     if (notification.relatedId != null) {
-      if (notification.type == NotificationType.review || notification.type == NotificationType.reply) {
+      if (notification.type == NotificationType.review ||
+          notification.type == NotificationType.reply) {
         context.go('/business/${notification.relatedId}');
       } else if (notification.type == NotificationType.business_request) {
         // Assume admins go to their dashboard
         context.go('/admin/dashboard');
-      } else if (notification.type == NotificationType.approval || notification.type == NotificationType.rejection) {
+      } else if (notification.type == NotificationType.approval ||
+          notification.type == NotificationType.rejection) {
         context.go('/business-dashboard');
       }
     }
   }
 
-  Future<void> _deleteNotification(BuildContext context, WidgetRef ref, NotificationModel notification) async {
-    await ref.read(notificationControllerProvider).deleteNotification(notification.id);
+  Future<void> _deleteNotification(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationModel notification,
+  ) async {
+    await ref
+        .read(notificationControllerProvider)
+        .deleteNotification(notification.id);
 
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Notification supprimee.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Notification supprimee.')));
   }
 
-  Map<String, List<NotificationModel>> _groupNotifications(List<NotificationModel> notifications) {
+  Map<String, List<NotificationModel>> _groupNotifications(
+    List<NotificationModel> notifications,
+  ) {
     final now = DateTime.now();
     final today = <NotificationModel>[];
     final thisWeek = <NotificationModel>[];
@@ -75,7 +89,9 @@ class NotificationsScreen extends ConsumerWidget {
               final hasUnread = notifications.any((n) => !n.isRead);
               return TextButton(
                 onPressed: hasUnread
-                    ? () => ref.read(notificationControllerProvider).markAllAsRead()
+                    ? () => ref
+                          .read(notificationControllerProvider)
+                          .markAllAsRead()
                     : null,
                 child: const Text('Tout marquer comme lu'),
               );
@@ -102,10 +118,9 @@ class NotificationsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
                     child: Text(
                       entry.key,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   ...entry.value.map(
@@ -115,7 +130,8 @@ class NotificationsScreen extends ConsumerWidget {
                         key: ValueKey(notification.id),
                         direction: DismissDirection.endToStart,
                         background: const _NotificationDismissBackground(),
-                        onDismissed: (_) => _deleteNotification(context, ref, notification),
+                        onDismissed: (_) =>
+                            _deleteNotification(context, ref, notification),
                         child: _NotificationCard(
                           notification: notification,
                           onTap: () => _handleTap(context, ref, notification),
@@ -134,10 +150,7 @@ class NotificationsScreen extends ConsumerWidget {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({
-    required this.notification,
-    required this.onTap,
-  });
+  const _NotificationCard({required this.notification, required this.onTap});
 
   final NotificationModel notification;
   final VoidCallback onTap;
@@ -279,10 +292,7 @@ class _NotificationDismissBackground extends StatelessWidget {
         color: colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        Icons.delete_rounded,
-        color: colorScheme.onErrorContainer,
-      ),
+      child: Icon(Icons.delete_rounded, color: colorScheme.onErrorContainer),
     );
   }
 }

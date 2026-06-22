@@ -26,8 +26,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   int _currentPage = 0;
   bool _isLoading = true;
 
-  late List<_UserModel> _allUsers;
-  late List<_UserModel> _filteredUsers;
+  List<_UserModel> _allUsers = [];
+  List<_UserModel> _filteredUsers = [];
 
   @override
   void initState() {
@@ -53,10 +53,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             name: u['full_name'] ?? 'Sans Nom',
             email: u['email'] ?? '',
             type: u['account_type'] == 'business_owner' ? UserType.business : UserType.client,
-            avatar: u['avatar_url'] ?? 'https://i.pravatar.cc/120',
+            avatar: u['avatar_url'],
             registeredAt: u['created_at'] != null ? DateTime.parse(u['created_at']) : DateTime.now(),
             status: UserStatus.active,
-            reviewsCount: 0, // Optionnel: Faire un count si besoin
+            reviewsCount: 0,
             businessesCount: 0,
           )).toList();
           _filterUsers();
@@ -200,7 +200,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundImage: NetworkImage(user.avatar),
+                      backgroundImage: user.avatar != null && user.avatar!.isNotEmpty ? NetworkImage(user.avatar!) : null,
+                      child: user.avatar == null || user.avatar!.isEmpty ? const Icon(Icons.person) : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -479,7 +480,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             // Avatar
                             CircleAvatar(
                               radius: 24,
-                              backgroundImage: NetworkImage(user.avatar),
+                              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty ? NetworkImage(user.avatar!) : null,
+                              child: user.avatar == null || user.avatar!.isEmpty ? const Icon(Icons.person) : null,
                             ),
                             const SizedBox(width: 12),
 
@@ -702,7 +704,7 @@ class _UserModel {
   final String name;
   final String email;
   final UserType type;
-  final String avatar;
+  final String? avatar;
   final DateTime registeredAt;
   UserStatus status;
   final int reviewsCount;

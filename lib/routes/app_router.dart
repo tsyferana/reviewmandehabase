@@ -101,10 +101,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       } else if (event == AuthChangeEvent.signedOut) {
         state = const AuthState();
       } else if (event == AuthChangeEvent.passwordRecovery) {
-        state = state.copyWith(
-          isAuthenticated: true,
-          isPasswordRecovery: true,
-        );
+        state = state.copyWith(isAuthenticated: true, isPasswordRecovery: true);
       }
     });
   }
@@ -480,7 +477,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      if (auth.isAuthenticated && !auth.isPasswordRecovery && public.contains(location)) {
+      if (auth.isAuthenticated &&
+          !auth.isPasswordRecovery &&
+          public.contains(location)) {
         switch (auth.userRole) {
           case 'client':
             return '/home';
