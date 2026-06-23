@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/review_model.dart';
 import '../../services/supabase_data_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessDashboardScreen extends StatefulWidget {
   const BusinessDashboardScreen({super.key});
@@ -63,6 +64,20 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
       if (biz != null) {
         _business = biz;
         final reviews = await SupabaseDataService().getBusinessReviews(biz['id']);
+        
+        final favoritesResponse = await Supabase.instance.client
+            .from('favorites')
+            .select('id')
+            .eq('business_id', biz['id']);
+            
+        _totalFavorites = favoritesResponse.length;
+        
+        final viewsResponse = await Supabase.instance.client
+            .from('business_views')
+            .select('id')
+            .eq('business_id', biz['id']);
+            
+        _totalViews = viewsResponse.length;
         
         _totalReviews = reviews.length;
         if (reviews.isNotEmpty) {

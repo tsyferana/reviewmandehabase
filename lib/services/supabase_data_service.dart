@@ -204,6 +204,14 @@ class SupabaseDataService {
     await _supabase.from('profiles').update({'account_type': type}).eq('id', user.id);
   }
 
+  Future<void> recordBusinessView(String businessId) async {
+    final user = _supabase.auth.currentUser;
+    await _supabase.from('business_views').insert({
+      'business_id': businessId,
+      if (user != null) 'user_id': user.id,
+    });
+  }
+
   // ================= CLIENT REPORTS =================
 
   Future<void> createReport(String reviewId, String reportType, String reason) async {

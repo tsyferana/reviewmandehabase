@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/business_model.dart';
 import '../../models/review_model.dart';
@@ -131,6 +132,15 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
   Future<void> _loadDetail({bool silent = false}) async {
     if (!silent) {
       setState(() => _isLoading = true);
+      try {
+        await _dataService.recordBusinessView(widget.businessId);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur vue: $e')),
+          );
+        }
+      }
     }
 
     final business = await _dataService.getBusinessById(widget.businessId);
@@ -173,6 +183,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                   _BusinessHeader(business: business, reviews: _reviews),
                   const SizedBox(height: 18),
                   _ActionButtons(
+                    business: business,
                     isFavorite: ref
                         .watch(favoriteControllerProvider)
                         .isFavoriteLocal(widget.businessId),
@@ -337,10 +348,12 @@ class _BusinessHeader extends StatelessWidget {
 
 class _ActionButtons extends StatelessWidget {
   const _ActionButtons({
+    required this.business,
     required this.isFavorite,
     required this.onFavoriteToggle,
   });
 
+  final BusinessModel business;
   final bool isFavorite;
   final VoidCallback onFavoriteToggle;
 
@@ -352,7 +365,26 @@ class _ActionButtons extends StatelessWidget {
           child: _ActionButton(
             icon: Icons.call_rounded,
             label: 'Appeler',
-            onPressed: () {},
+            onPressed: () async {
+              if (business.phone.isNotEmpty) {
+                final Uri url = Uri(scheme: 'tel', path: business.phone);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url);
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Impossible de lancer l\'appel.')),
+                    );
+                  }
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Numéro de téléphone non renseigné.')),
+                  );
+                }
+              }
+            },
           ),
         ),
         const SizedBox(width: 8),
@@ -423,6 +455,10 @@ class _PhotoGallery extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final validUrls = imageUrls.where((url) => url.isNotEmpty && url.startsWith('http')).toList();
+    
+    if (validUrls.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -432,10 +468,10 @@ class _PhotoGallery extends StatelessWidget {
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: imageUrls.length,
+            itemCount: validUrls.length,
             separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final imageUrl = imageUrls[index];
+              final imageUrl = validUrls[index];
               return GestureDetector(
                 onTap: () => _openPhotoViewer(context, imageUrl),
                 child: ClipRRect(
@@ -445,6 +481,12 @@ class _PhotoGallery extends StatelessWidget {
                     width: 148,
                     height: 106,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 148,
+                      height: 106,
+                      color: Colors.grey.shade300,
+                      child: const Icon(Icons.broken_image_rounded),
+                    ),
                   ),
                 ),
               );
