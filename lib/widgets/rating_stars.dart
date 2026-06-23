@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 
 class RatingStars extends StatelessWidget {
@@ -36,7 +37,7 @@ class RatingStars extends StatelessWidget {
                   ? Icons.star_rounded
                   : Icons.star_outline_rounded,
               size: size,
-              color: Colors.amber,
+              color: AppColors.starRating,
             ),
           ),
         );

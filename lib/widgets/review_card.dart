@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'rating_stars.dart';
 
@@ -144,7 +145,7 @@ class ReviewCard extends StatelessWidget {
                     ],
                   ),
                   Material(
-                    color: Colors.transparent,
+                    color: AppColors.transparent,
                     child: InkWell(
                       onTap: onLikeTap,
                       borderRadius: BorderRadius.circular(4),
@@ -154,7 +155,7 @@ class ReviewCard extends StatelessWidget {
                             : Icons.favorite_outline_rounded,
                         size: 16,
                         color: isLiked
-                            ? Colors.red
+                            ? AppColors.error
                             : colorScheme.onSurfaceVariant,
                       ),
                     ),

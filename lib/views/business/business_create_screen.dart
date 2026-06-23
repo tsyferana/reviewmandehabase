@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -126,7 +127,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Entreprise créée avec succès ! En attente d\'approbation.'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           duration: Duration(seconds: 3),
         ),
       );
@@ -213,7 +214,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                             height: 44,
                             child: const Icon(
                               Icons.location_on,
-                              color: Colors.redAccent,
+                              color: AppColors.error,
                               size: 44,
                             ),
                           ),
@@ -439,18 +440,18 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
+                                  color: AppColors.grey.shade300,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.map_rounded, size: 32, color: Colors.grey.shade600),
+                                      Icon(Icons.map_rounded, size: 32, color: AppColors.grey.shade600),
                                       const SizedBox(height: 8),
                                       Text(
                                         'Google Maps désactivé',
-                                        style: TextStyle(color: Colors.grey.shade700),
+                                        style: TextStyle(color: AppColors.grey.shade700),
                                       ),
                                     ],
                                   ),
@@ -464,7 +465,7 @@ class _BusinessCreateScreenState extends State<BusinessCreateScreen> {
                                 child: const Center(
                                   child: Text(
                                     'Appuyer pour simuler une position',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),

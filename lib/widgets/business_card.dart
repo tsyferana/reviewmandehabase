@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 
 class BusinessCard extends StatelessWidget {
@@ -67,14 +68,14 @@ class BusinessCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isOpen
-                          ? Colors.green.withValues(alpha: 0.9)
-                          : Colors.red.withValues(alpha: 0.9),
+                          ? AppColors.success.withValues(alpha: 0.9)
+                          : AppColors.error.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       isOpen ? 'Ouvert' : 'Fermé',
                       style: textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -85,21 +86,21 @@ class BusinessCard extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: Material(
-                    color: Colors.transparent,
+                    color: AppColors.transparent,
                     child: InkWell(
                       onTap: onFavoriteTap,
                       child: Container(
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppColors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           isFavorited
                               ? Icons.favorite_rounded
                               : Icons.favorite_outline_rounded,
-                          color: isFavorited ? Colors.red : Colors.grey,
+                          color: isFavorited ? AppColors.error : AppColors.grey,
                           size: 18,
                         ),
                       ),
@@ -138,7 +139,7 @@ class BusinessCard extends StatelessWidget {
                           Icon(
                             Icons.star_rounded,
                             size: 14,
-                            color: Colors.amber,
+                            color: AppColors.starRating,
                           ),
                           const SizedBox(width: 4),
                           Text(

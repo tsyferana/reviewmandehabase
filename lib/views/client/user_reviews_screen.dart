@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -126,7 +127,7 @@ class UserReviewsScreen extends ConsumerWidget {
                             ),
                             Row(
                               children: [
-                                Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                                Icon(Icons.star_rounded, color: AppColors.starRating, size: 20),
                                 const SizedBox(width: 4),
                                 Text(
                                   rating.toStringAsFixed(1),

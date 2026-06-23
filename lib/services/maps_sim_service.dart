@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -25,7 +26,7 @@ class MapsSimService {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: const [
                     BoxShadow(
@@ -64,7 +65,7 @@ class MapsSimService {
               ),
               const Icon(
                 Icons.location_on,
-                color: Colors.redAccent,
+                color: AppColors.error,
                 size: 32,
               ),
             ],

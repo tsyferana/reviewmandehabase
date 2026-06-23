@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {
@@ -60,7 +61,7 @@ class StatCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: (trendPositive ? Colors.green : Colors.red)
+                        color: (trendPositive ? AppColors.success : AppColors.error)
                             .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -71,14 +72,14 @@ class StatCard extends StatelessWidget {
                             trendPositive
                                 ? Icons.trending_up_rounded
                                 : Icons.trending_down_rounded,
-                            color: trendPositive ? Colors.green : Colors.red,
+                            color: trendPositive ? AppColors.success : AppColors.error,
                             size: 12,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             trend!,
                             style: textTheme.labelSmall?.copyWith(
-                              color: trendPositive ? Colors.green : Colors.red,
+                              color: trendPositive ? AppColors.success : AppColors.error,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

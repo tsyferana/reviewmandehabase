@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -181,19 +182,19 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
                   label: 'Total avis',
                   value: '${_reviewController.reviews.length}',
                   icon: Icons.rate_review_rounded,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                 ),
                 _StatSmallCard(
                   label: 'Note moyenne',
                   value: _calculateAverageRating().toStringAsFixed(1),
                   icon: Icons.star_rounded,
-                  color: Colors.amber,
+                  color: AppColors.starRating,
                 ),
                 _StatSmallCard(
                   label: '% Répondus',
                   value: '${_calculatePercentageAnswered()}%',
                   icon: Icons.reply_rounded,
-                  color: Colors.green,
+                  color: AppColors.success,
                 ),
               ],
             ),
@@ -544,7 +545,7 @@ class _ReviewManagementCardState extends State<_ReviewManagementCard> {
                                   ? Icons.star_rounded
                                   : Icons.star_outline_rounded,
                               size: 14,
-                              color: Colors.amber,
+                              color: AppColors.starRating,
                             ),
                           ),
                           const SizedBox(width: 6),

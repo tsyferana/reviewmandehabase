@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -124,7 +125,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: const Icon(
                                 Icons.camera_alt_rounded,
                                 size: 16,
-                                color: Colors.white,
+                                color: AppColors.white,
                               ),
                             ),
                           ),
@@ -181,7 +182,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Profil mis à jour avec succès'),
-                              backgroundColor: Colors.green,
+                              backgroundColor: AppColors.success,
                             ),
                           );
                         }
@@ -201,7 +202,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     }
                   },
                   child: isSaving 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
                       : const Text('Enregistrer'),
                 ),
               ],

@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui' as ui;
@@ -103,13 +104,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 Icons.business,
                 Colors.purple,
               ),
-              _stat("Reviews", _totalReviews, Icons.star, Colors.orange),
-              _stat("Reports", _pendingReports, Icons.flag, Colors.red),
+              _stat("Reviews", _totalReviews, Icons.star, AppColors.warning),
+              _stat("Reports", _pendingReports, Icons.flag, AppColors.error),
               _stat(
                 "Pending",
                 _pendingApprovals,
                 Icons.hourglass_bottom,
-                Colors.amber,
+                AppColors.starRating,
               ),
             ],
           ),

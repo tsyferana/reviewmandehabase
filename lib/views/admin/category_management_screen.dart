@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -188,7 +189,7 @@ class _CategoryManagementScreenState
                               color: color,
                               borderRadius: BorderRadius.circular(8),
                               border: isSelected
-                                  ? Border.all(color: Colors.black, width: 3)
+                                  ? Border.all(color: AppColors.black, width: 3)
                                   : null,
                             ),
                           ),
@@ -333,7 +334,7 @@ class _CategoryManagementScreenState
                               color: color,
                               borderRadius: BorderRadius.circular(8),
                               border: isSelected
-                                  ? Border.all(color: Colors.black, width: 3)
+                                  ? Border.all(color: AppColors.black, width: 3)
                                   : null,
                             ),
                           ),
@@ -617,12 +618,12 @@ class _CategoryManagementScreenState
                                           Icon(
                                             Icons.delete_rounded,
                                             size: 18,
-                                            color: Colors.red,
+                                            color: AppColors.error,
                                           ),
                                           SizedBox(width: 8),
                                           Text(
                                             'Supprimer',
-                                            style: TextStyle(color: Colors.red),
+                                            style: TextStyle(color: AppColors.error),
                                           ),
                                         ],
                                       ),

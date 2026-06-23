@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -266,19 +267,19 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
                   icon: Icons.rate_review_rounded,
                   label: 'Avis totaux',
                   value: '${stats.totalReviews}',
-                  color: Colors.orange,
+                  color: AppColors.warning,
                 ),
                 _SummaryCard(
                   icon: Icons.star_rounded,
                   label: 'Note moyenne',
                   value: stats.averageRating.toStringAsFixed(2),
-                  color: Colors.amber,
+                  color: AppColors.starRating,
                 ),
                 _SummaryCard(
                   icon: Icons.trending_up_rounded,
                   label: 'Conversion favoris',
                   value: '${stats.conversionRate.toStringAsFixed(1)}%',
-                  color: Colors.green,
+                  color: AppColors.success,
                 ),
               ],
             ),
@@ -357,7 +358,7 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
                     const SizedBox(height: 18),
                     _SimpleLineChart(
                       data: _reviewsData[_selectedPeriod]!,
-                      color: Colors.orange,
+                      color: AppColors.warning,
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -492,7 +493,7 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
                                   Icon(
                                     Icons.star_rounded,
                                     size: 14,
-                                    color: Colors.amber,
+                                    color: AppColors.starRating,
                                   ),
                                 ],
                               ),
@@ -597,13 +598,13 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
       case 'Recherche':
         return Colors.blue;
       case 'Carte':
-        return Colors.green;
+        return AppColors.success;
       case 'Recommandations':
-        return Colors.orange;
+        return AppColors.warning;
       case 'Direct':
         return Colors.purple;
       default:
-        return Colors.grey;
+        return AppColors.grey;
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -530,7 +531,7 @@ class _SearchResultCard extends StatelessWidget {
                               index < business.rating.round()
                                   ? Icons.star_rounded
                                   : Icons.star_border_rounded,
-                              color: Colors.amber,
+                              color: AppColors.starRating,
                               size: 16,
                             );
                           }),

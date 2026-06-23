@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../repositories/favorite_repository.dart';
@@ -48,7 +49,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         onTap: _toggle,
         customBorder: const CircleBorder(),
@@ -56,12 +57,12 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.85),
+            color: AppColors.white.withValues(alpha: 0.85),
             shape: BoxShape.circle,
           ),
           child: Icon(
             _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: _isFavorite ? Colors.red : Colors.grey[700],
+            color: _isFavorite ? AppColors.error : AppColors.grey[700],
             size: 18,
           ),
         ),

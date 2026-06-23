@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../utils/couleur.dart';
 
 class AppTheme {
   // Seed colors
-  static const Color seedColor = Color(0xFF4D96FF); // Modern blue (Airbnb-like)
-  static const Color secondarySeedColor = Color(0xFFFF9500); // Warm orange
-  static const Color tertiarySeedColor = Color(0xFF17B890); // Teal
+  static const Color seedColor = AppColors.primary;
+  static const Color secondarySeedColor = AppColors.secondary;
+  static const Color tertiarySeedColor = AppColors.tertiary;
 
   // === LIGHT THEME ===
   static ThemeData get lightTheme {
@@ -624,7 +627,7 @@ class AppTheme {
     ColorScheme colorScheme,
     Brightness brightness,
   ) {
-    return TextTheme(
+    final base = TextTheme(
       // Display (large headings)
       displayLarge: TextStyle(
         fontSize: 57,
@@ -740,5 +743,7 @@ class AppTheme {
         height: 1.45,
       ),
     );
+
+    return GoogleFonts.poppinsTextTheme(base);
   }
 }

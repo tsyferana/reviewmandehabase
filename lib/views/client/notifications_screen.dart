@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -290,7 +291,7 @@ class _NotificationCard extends StatelessWidget {
       case NotificationType.business_request:
         return colorScheme.secondaryContainer;
       case NotificationType.approval:
-        return Colors.green.withValues(alpha: 0.2);
+        return AppColors.success.withValues(alpha: 0.2);
       case NotificationType.rejection:
         return colorScheme.errorContainer;
       case NotificationType.report:

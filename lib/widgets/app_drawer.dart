@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -124,7 +125,7 @@ class AppDrawer extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.logout_rounded, color: Colors.red),
+            leading: const Icon(Icons.logout_rounded, color: AppColors.error),
             title: const Text('Déconnexion'),
             onTap: () {
               Navigator.pop(context); // Ferme le drawer

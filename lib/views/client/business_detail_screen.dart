@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -232,8 +233,8 @@ class _BusinessCoverAppBar extends StatelessWidget {
       expandedHeight: 280,
       pinned: true,
       stretch: true,
-      backgroundColor: Colors.transparent,
-      foregroundColor: Colors.white,
+      backgroundColor: AppColors.transparent,
+      foregroundColor: AppColors.white,
       actions: [
         IconButton.filledTonal(
           tooltip: 'Partager',
@@ -264,9 +265,9 @@ class _BusinessCoverAppBar extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.35),
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.45),
+                      AppColors.black.withValues(alpha: 0.35),
+                      AppColors.transparent,
+                      AppColors.black.withValues(alpha: 0.45),
                     ],
                   ),
                 ),
@@ -496,7 +497,7 @@ class _PhotoGallery extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) => Container(
                       width: 148,
                       height: 106,
-                      color: Colors.grey.shade300,
+                      color: AppColors.grey.shade300,
                       child: const Icon(Icons.broken_image_rounded),
                     ),
                   ),

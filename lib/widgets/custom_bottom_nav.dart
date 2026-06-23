@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 
 class CustomBottomNav extends StatelessWidget {
@@ -29,7 +30,7 @@ class CustomBottomNav extends StatelessWidget {
 
           return Expanded(
             child: Material(
-              color: Colors.transparent,
+              color: AppColors.transparent,
               child: InkWell(
                 onTap: () => onTap(index),
                 child: Padding(
@@ -63,13 +64,13 @@ class CustomBottomNav extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red,
+                            color: AppColors.error,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             '${item.badge}',
                             style: textTheme.labelSmall?.copyWith(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 10,
                             ),
                           ),

@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -107,13 +108,13 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
   Color _getReportTypeColor(ReportType type) {
     switch (type) {
       case ReportType.falseReview:
-        return Colors.red;
+        return AppColors.error;
       case ReportType.spam:
-        return Colors.orange;
+        return AppColors.warning;
       case ReportType.offensive:
-        return Colors.deepOrange;
+        return AppColors.warning;
       case ReportType.incorrectInfo:
-        return Colors.amber;
+        return AppColors.starRating;
     }
   }
 
@@ -331,8 +332,8 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: report.status == ReportStatus.pending
-                                    ? Colors.orange.withValues(alpha: 0.2)
-                                    : Colors.green.withValues(alpha: 0.2),
+                                    ? AppColors.warning.withValues(alpha: 0.2)
+                                    : AppColors.success.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -341,8 +342,8 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
                                     : 'Traité',
                                 style: textTheme.labelSmall?.copyWith(
                                   color: report.status == ReportStatus.pending
-                                      ? Colors.orange
-                                      : Colors.green,
+                                      ? AppColors.warning
+                                      : AppColors.success,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -459,7 +460,7 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
                                           ? Icons.star_rounded
                                           : Icons.star_outline_rounded,
                                       size: 14,
-                                      color: Colors.amber,
+                                      color: AppColors.starRating,
                                     ),
                                   ),
                                 ],
@@ -793,8 +794,8 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: report.status == ReportStatus.pending
-                                        ? Colors.orange.withValues(alpha: 0.2)
-                                        : Colors.green.withValues(alpha: 0.2),
+                                        ? AppColors.warning.withValues(alpha: 0.2)
+                                        : AppColors.success.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -804,8 +805,8 @@ class _ReportsManagementScreenState extends State<ReportsManagementScreen> {
                                     style: textTheme.labelSmall?.copyWith(
                                       color:
                                           report.status == ReportStatus.pending
-                                          ? Colors.orange
-                                          : Colors.green,
+                                          ? AppColors.warning
+                                          : AppColors.success,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),

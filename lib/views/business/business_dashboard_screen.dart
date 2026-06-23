@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -314,25 +315,25 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                         icon: Icons.rate_review_rounded,
                         label: 'Avis',
                         value: '$_totalReviews',
-                        color: Colors.orange,
+                        color: AppColors.warning,
                       ),
                       _StatCard(
                         icon: Icons.favorite_rounded,
                         label: 'Favoris',
                         value: '$_totalFavorites',
-                        color: Colors.red,
+                        color: AppColors.error,
                       ),
                       _StatCard(
                         icon: Icons.star_rounded,
                         label: 'Note moyenne',
                         value: '$_averageRating',
-                        color: Colors.amber,
+                        color: AppColors.starRating,
                       ),
                       _StatCard(
                         icon: Icons.person_rounded,
                         label: 'Visiteurs ce mois',
                         value: '$_visitorsThisMonth',
-                        color: Colors.green,
+                        color: AppColors.success,
                       ),
                       _GrowthCard(
                         percentage: _growthPercentage,
@@ -451,7 +452,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                                         const Icon(
                                           Icons.star_rounded,
                                           size: 14,
-                                          color: Colors.amber,
+                                          color: AppColors.starRating,
                                         ),
                                       ],
                                     ),
@@ -612,7 +613,7 @@ class _GrowthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final color = isPositive ? Colors.green : Colors.red;
+    final color = isPositive ? AppColors.success : AppColors.error;
 
     return Card(
       elevation: 0,
@@ -808,7 +809,7 @@ class _ReviewCard extends StatelessWidget {
                                   ? Icons.star_rounded
                                   : Icons.star_outline_rounded,
                               size: 14,
-                              color: Colors.amber,
+                              color: AppColors.starRating,
                             ),
                           ),
                           const SizedBox(width: 6),

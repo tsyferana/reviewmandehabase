@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -230,16 +231,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: user.status == UserStatus.active
-                            ? Colors.green.withValues(alpha: 0.2)
-                            : Colors.red.withValues(alpha: 0.2),
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.error.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         user.status == UserStatus.active ? 'Actif' : 'Suspendu',
                         style: textTheme.labelSmall?.copyWith(
                           color: user.status == UserStatus.active
-                              ? Colors.green
-                              : Colors.red,
+                              ? AppColors.success
+                              : AppColors.error,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -541,10 +542,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                         decoration: BoxDecoration(
                                           color:
                                               user.status == UserStatus.active
-                                              ? Colors.green.withValues(
+                                              ? AppColors.success.withValues(
                                                   alpha: 0.2,
                                                 )
-                                              : Colors.red.withValues(
+                                              : AppColors.error.withValues(
                                                   alpha: 0.2,
                                                 ),
                                           borderRadius: BorderRadius.circular(
@@ -558,8 +559,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                           style: textTheme.labelSmall?.copyWith(
                                             color:
                                                 user.status == UserStatus.active
-                                                ? Colors.green
-                                                : Colors.red,
+                                                ? AppColors.success
+                                                : AppColors.error,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
@@ -618,12 +619,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                       Icon(
                                         Icons.delete_rounded,
                                         size: 18,
-                                        color: Colors.red,
+                                        color: AppColors.error,
                                       ),
                                       SizedBox(width: 8),
                                       Text(
                                         'Supprimer',
-                                        style: TextStyle(color: Colors.red),
+                                        style: TextStyle(color: AppColors.error),
                                       ),
                                     ],
                                   ),

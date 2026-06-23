@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -247,11 +248,11 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
                                 color:
                                     business.status ==
                                         BusinessApprovalStatus.pending
-                                    ? Colors.orange.withValues(alpha: 0.2)
+                                    ? AppColors.warning.withValues(alpha: 0.2)
                                     : business.status ==
                                           BusinessApprovalStatus.approved
-                                    ? Colors.green.withValues(alpha: 0.2)
-                                    : Colors.red.withValues(alpha: 0.2),
+                                    ? AppColors.success.withValues(alpha: 0.2)
+                                    : AppColors.error.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -266,11 +267,11 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
                                   color:
                                       business.status ==
                                           BusinessApprovalStatus.pending
-                                      ? Colors.orange
+                                      ? AppColors.warning
                                       : business.status ==
                                             BusinessApprovalStatus.approved
-                                      ? Colors.green
-                                      : Colors.red,
+                                      ? AppColors.success
+                                      : AppColors.error,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -372,10 +373,10 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
+                        color: AppColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.red.withValues(alpha: 0.3),
+                          color: AppColors.error.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Column(
@@ -386,13 +387,13 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
                               Icon(
                                 Icons.info_rounded,
                                 size: 18,
-                                color: Colors.red,
+                                color: AppColors.error,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 'Motif du rejet',
                                 style: textTheme.labelMedium?.copyWith(
-                                  color: Colors.red,
+                                  color: AppColors.error,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -439,7 +440,7 @@ class _BusinessApprovalScreenState extends State<BusinessApprovalScreen>
                             icon: const Icon(Icons.check_circle_rounded),
                             label: const Text('Approuver'),
                             style: FilledButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: AppColors.success,
                             ),
                           ),
                         ),

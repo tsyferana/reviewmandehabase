@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -400,8 +401,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         ),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.logout_rounded, color: Colors.red),
-          title: const Text('Déconnexion', style: TextStyle(color: Colors.red)),
+          leading: const Icon(Icons.logout_rounded, color: AppColors.error),
+          title: const Text('Déconnexion', style: TextStyle(color: AppColors.error)),
           onTap: _confirmLogout,
         ),
         const SizedBox(height: 12),
@@ -447,7 +448,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     child: Container(
                       decoration: BoxDecoration(
                         border: Border(
-                          right: BorderSide(color: Colors.grey.shade300),
+                          right: BorderSide(color: AppColors.grey.shade300),
                         ),
                       ),
                       child: _menu(context),

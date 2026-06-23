@@ -1,3 +1,4 @@
+import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 
 class ReportReviewDialog extends StatefulWidget {
@@ -105,12 +106,12 @@ class _ReportReviewDialogState extends State<ReportReviewDialog> {
         ),
         FilledButton(
           onPressed: _isSubmitting ? null : _submit,
-          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
           child: _isSubmitting
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                 )
               : const Text('Signaler'),
         ),
