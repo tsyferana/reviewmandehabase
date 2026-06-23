@@ -102,25 +102,63 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final pages = _buildPages(colorScheme);
     final isLast = _currentPage == pages.length - 1;
 
+    final size = MediaQuery.sizeOf(context);
+
     return Scaffold(
       body: Stack(
         children: [
-          // Ambient background gradient — shifts subtly per page
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeInOut,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.0, 0.55, 1.0],
-                colors: [
-                  colorScheme.primaryContainer.withValues(
-                    alpha: 0.15 + _currentPage * 0.04,
-                  ),
-                  colorScheme.surface,
-                  colorScheme.secondaryContainer.withValues(alpha: 0.10),
-                ],
+          // ── Ambient background (identique au login) ──────────────
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: const [0.0, 0.5, 1.0],
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.07 + _currentPage * 0.03),
+                    colorScheme.surface,
+                    colorScheme.secondary.withValues(alpha: 0.05 + _currentPage * 0.02),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Orbe décoratif haut-droit ────────────────────────────
+          Positioned(
+            top: -size.width * 0.3,
+            right: -size.width * 0.2,
+            child: Container(
+              width: size.width * 0.7,
+              height: size.width * 0.7,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.12 + _currentPage * 0.03),
+                    colorScheme.primary.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Orbe décoratif bas-gauche ────────────────────────────
+          Positioned(
+            bottom: -size.width * 0.2,
+            left: -size.width * 0.15,
+            child: Container(
+              width: size.width * 0.55,
+              height: size.width * 0.55,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    colorScheme.secondary.withValues(alpha: 0.08),
+                    colorScheme.secondary.withValues(alpha: 0.0),
+                  ],
+                ),
               ),
             ),
           ),

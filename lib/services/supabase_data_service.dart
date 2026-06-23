@@ -197,6 +197,14 @@ class SupabaseDataService {
         .order('created_at', ascending: false);
   }
 
+  Future<List<Map<String, dynamic>>> getBusinessViews(String businessId) async {
+    return await _supabase
+        .from('business_views')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('created_at', ascending: false);
+  }
+
   Future<void> updateAccountType(String type) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;

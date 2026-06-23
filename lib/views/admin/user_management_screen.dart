@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../services/supabase_data_service.dart';
-import 'package:intl/intl.dart';
+
 
 enum UserType { client, business }
 
@@ -346,9 +346,32 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion des utilisateurs'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Utilisateurs'),
+            Text(
+              '${_allUsers.length} comptes au total',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            tooltip: 'Actualiser',
+            onPressed: () {
+              setState(() => _isLoading = true);
+              _loadUsers();
+            },
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
+
       body: _isLoading 
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -356,18 +379,34 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search bar
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Rechercher par nom ou email...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          // Search bar
+          TextFormField(
+            controller: _searchController,
+            onChanged: (_) => _filterUsers(),
+            decoration: InputDecoration(
+              hintText: 'Rechercher par nom ou email...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      onPressed: () {
+                        _searchController.clear();
+                        _filterUsers();
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
               ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
             ),
+          ),
+
             const SizedBox(height: 16),
 
             // Filters
@@ -419,13 +458,36 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Results count
-            Text(
-              'Résultats: ${_filteredUsers.length} utilisateurs',
-              style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+          // Results count
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.15),
               ),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.people_rounded,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${_filteredUsers.length} utilisateur${_filteredUsers.length > 1 ? 's' : ''} trouvé${_filteredUsers.length > 1 ? 's' : ''}',
+                  style: textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
             const SizedBox(height: 12),
 
             // Users list
@@ -467,22 +529,49 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   return Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: colorScheme.outlineVariant),
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                      ),
                     ),
                     child: InkWell(
                       onTap: () => _showUserDetails(user),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Avatar
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundImage: user.avatar != null && user.avatar!.isNotEmpty ? NetworkImage(user.avatar!) : null,
-                              child: user.avatar == null || user.avatar!.isEmpty ? const Icon(Icons.person) : null,
+                            // Avatar with colored ring
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: user.type == UserType.client
+                                      ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                                      : const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+                                  width: 2,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 22,
+                                backgroundColor: user.type == UserType.client
+                                    ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
+                                    : const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                                backgroundImage: user.avatar != null &&
+                                        user.avatar!.isNotEmpty
+                                    ? NetworkImage(user.avatar!)
+                                    : null,
+                                child: user.avatar == null || user.avatar!.isEmpty
+                                    ? Icon(
+                                        Icons.person_rounded,
+                                        color: user.type == UserType.client
+                                            ? const Color(0xFF3B82F6)
+                                            : const Color(0xFF8B5CF6),
+                                        size: 22,
+                                      )
+                                    : null,
+                              ),
                             ),
                             const SizedBox(width: 12),
 

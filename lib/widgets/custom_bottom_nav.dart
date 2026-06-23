@@ -1,5 +1,5 @@
-import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class CustomBottomNav extends StatelessWidget {
   const CustomBottomNav({
@@ -16,75 +16,51 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          final isActive = currentIndex == index;
-
-          return Expanded(
-            child: Material(
-              color: AppColors.transparent,
-              child: InkWell(
-                onTap: () => onTap(index),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        item.icon,
-                        color: isActive
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.label,
-                        style: textTheme.labelSmall?.copyWith(
-                          color: isActive
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
-                          fontWeight: isActive
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                      ),
-                      if (item.badge != null) ...[
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${item.badge}',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.white,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      child: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: onTap,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        indicatorColor: colorScheme.primaryContainer,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        animationDuration: const Duration(milliseconds: 400),
+        destinations: items.map((item) {
+          return NavigationDestination(
+            icon: item.badge != null && item.badge! > 0
+                ? Badge(
+                    label: Text('${item.badge}'),
+                    child: Icon(item.icon),
+                  )
+                : Icon(item.icon),
+            selectedIcon: item.badge != null && item.badge! > 0
+                ? Badge(
+                    label: Text('${item.badge}'),
+                    child: Icon(item.selectedIcon ?? item.icon),
+                  )
+                : Icon(item.selectedIcon ?? item.icon),
+            label: item.label,
           );
-        }),
+        }).toList(),
       ),
-    );
+    ).animate().slideY(begin: 1, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
   }
 }
 
@@ -92,10 +68,12 @@ class CustomBottomNavItem {
   const CustomBottomNavItem({
     required this.icon,
     required this.label,
+    this.selectedIcon,
     this.badge,
   });
 
   final IconData icon;
+  final IconData? selectedIcon;
   final String label;
   final int? badge;
 }

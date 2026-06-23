@@ -9,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../repositories/auth_repository.dart';
+
 import '../../controllers/auth_providers.dart';
 import '../../routes/app_router.dart';
 import '../../services/supabase_data_service.dart';
@@ -455,220 +455,346 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil'), centerTitle: false),
       body: Container(
         decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                      padding: const EdgeInsets.all(18),
+          child: CustomScrollView(
+            slivers: [
+              // ── Gradient header banner ─────────────────────────────
+              SliverToBoxAdapter(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Gradient banner
+                    Container(
+                      height: 130,
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: colorScheme.outlineVariant),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withValues(alpha: 0.75),
+                            colorScheme.secondary.withValues(alpha: 0.6),
+                          ],
+                        ),
                       ),
-                      child: Row(
+                      // Decorative orb
+                      child: Stack(
                         children: [
-                          CircleAvatar(
-                            radius: 36,
-                            backgroundColor: colorScheme.primaryContainer,
-                            backgroundImage: _photoUrl != null
-                                ? NetworkImage(_photoUrl!)
-                                : null,
-                            child: _photoUrl == null
-                                ? Text(
-                                    _fullName
-                                        .split(' ')
-                                        .map(
-                                          (part) =>
-                                              part.isNotEmpty ? part[0] : '',
-                                        )
-                                        .take(2)
-                                        .join(),
-                                    style: Theme.of(context).textTheme.headlineSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color: colorScheme.onPrimaryContainer,
-                                        ),
-                                  )
-                                : null,
+                          Positioned(
+                            top: -30,
+                            right: -20,
+                            child: Container(
+                              width: 140,
+                              height: 140,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.12),
+                                    Colors.white.withValues(alpha: 0.0),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          // AppBar back area
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: Row(
                               children: [
                                 Text(
-                                  _fullName,
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  'Mon Profil',
+                                  style: textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
                                     fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  user?.email ?? '',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Chip(
-                                  label: Text(
-                                    user?.userMetadata?['account_type'] ==
-                                            'business_owner'
-                                        ? 'Propriétaire d’entreprise'
-                                        : 'Utilisateur',
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          FilledButton.icon(
-                            onPressed: _editProfile,
-                            icon: const Icon(Icons.edit_rounded),
-                            label: const Text('Modifier'),
-                          ),
                         ],
                       ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 420.ms)
-                    .scale(
-                      begin: const Offset(0.96, 0.96),
-                      end: const Offset(1, 1),
-                      duration: 420.ms,
                     ),
-                const SizedBox(height: 24),
-                _isLoadingStats 
-                  ? const Center(child: CircularProgressIndicator())
-                  : Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _ProfileStatCard(
-                      icon: Icons.rate_review_rounded,
-                      label: 'Avis',
-                      value: '$_reviewsCount',
-                    ),
-                    _ProfileStatCard(
-                      icon: Icons.calendar_month_rounded,
-                      label: 'Membre depuis',
-                      value: _formatMemberSince(_memberSince),
+
+                    // Avatar overlapping banner
+                    Positioned(
+                      bottom: -52,
+                      left: 20,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colorScheme.surface,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withValues(alpha: 0.15),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 44,
+                          backgroundColor: colorScheme.primaryContainer,
+                          backgroundImage: _photoUrl != null
+                              ? NetworkImage(_photoUrl!)
+                              : null,
+                          child: _photoUrl == null
+                              ? Text(
+                                  _fullName
+                                      .split(' ')
+                                      .map((p) => p.isNotEmpty ? p[0] : '')
+                                      .take(2)
+                                      .join(),
+                                  style: textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: colorScheme.onPrimaryContainer,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    side: BorderSide(color: colorScheme.outlineVariant),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
+              ),
+
+              // ── Name + email + edit ────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 64, 16, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _ProfileSectionTile(
-                        icon: Icons.history_rounded,
-                        title: 'Historique des avis',
-                        subtitle: 'Voir vos avis publiés',
-                        onTap: () => context.push('/user-reviews'),
-                      ),
-                      _ProfileSectionTile(
-                        icon: Icons.favorite_outline_rounded,
-                        title: 'Mes favoris',
-                        subtitle: 'Accéder à votre liste de favoris',
-                        onTap: () => context.push('/favorites'),
-                      ),
-                      _ProfileSectionTile(
-                        icon: Icons.settings_outlined,
-                        title: 'Paramètres',
-                        subtitle: 'Notifications, langue et thème',
-                        onTap: _openSettingsSheet,
-                      ),
-                      userBusinessAsync.when(
-                        data: (business) {
-                          if (business != null) {
-                            return _ProfileSectionTile(
-                              icon: Icons.storefront_rounded,
-                              title: 'Mon entreprise',
-                              subtitle: 'Gérer votre présence professionnelle',
-                              onTap: () async {
-                                final status = business['status'];
-                                if (status == 'pending') {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('En attente'),
-                                      content: const Text('Votre demande de création d\'entreprise est en cours d\'examen par un administrateur.'),
-                                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-                                    ),
-                                  );
-                                } else if (status == 'rejected') {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Demande rejetée'),
-                                      content: const Text('Désolé, votre demande a été rejetée. Veuillez contacter le support pour plus de détails.'),
-                                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-                                    ),
-                                  );
-                                } else if (status == 'approved') {
-                                  if (user?.userMetadata?['account_type'] != 'business_owner') {
-                                    await SupabaseDataService().updateAccountType('business_owner');
-                                  }
-                                  if (context.mounted) context.push('/business/dashboard');
-                                }
-                              },
-                            );
-                          } else {
-                            return _ProfileSectionTile(
-                              icon: Icons.add_business_rounded,
-                              title: 'Créer mon entreprise',
-                              subtitle: 'Enregistrez votre établissement',
-                              onTap: () => context.push('/business/create'),
-                            );
-                          }
-                        },
-                        loading: () => const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (error, stack) => _ProfileSectionTile(
-                          icon: Icons.error_outline,
-                          title: 'Erreur (Admin/DB)',
-                          subtitle: error.toString(),
-                          onTap: () {},
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _fullName,
+                              style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user?.email ?? '',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer.withValues(
+                                  alpha: 0.6,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                user?.userMetadata?['account_type'] ==
+                                        'business_owner'
+                                    ? '🏢 Propriétaire d\'entreprise'
+                                    : '👤 Client',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      _ProfileSectionTile(
-                        icon: Icons.headset_mic_rounded,
-                        title: 'Aide & Support',
-                        subtitle: 'Contacter l’assistance ReviewApp',
-                        onTap: _showHelp,
-                      ),
-                      _ProfileSectionTile(
-                        icon: Icons.info_outline_rounded,
-                        title: 'À propos',
-                        subtitle: 'Version et informations légales',
-                        onTap: _showAbout,
-                      ),
-                      _ProfileSectionTile(
-                        icon: Icons.logout_rounded,
-                        title: 'Déconnexion',
-                        subtitle: 'Se déconnecter de votre compte',
-                        onTap: _confirmLogout,
-                        foregroundColor: colorScheme.error,
+                      FilledButton.icon(
+                        onPressed: _editProfile,
+                        icon: const Icon(Icons.edit_rounded, size: 16),
+                        label: const Text('Modifier'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                ).animate().fadeIn(duration: 420.ms).slideY(begin: 0.04),
+              ),
+
+              // ── Stats ──────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                  child: _isLoadingStats
+                      ? const Center(child: CircularProgressIndicator())
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: _ProfileStatCard(
+                                icon: Icons.rate_review_rounded,
+                                label: 'Avis publiés',
+                                value: '$_reviewsCount',
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ProfileStatCard(
+                                icon: Icons.calendar_month_rounded,
+                                label: 'Membre depuis',
+                                value: _formatMemberSince(_memberSince),
+                                color: colorScheme.tertiary,
+                              ),
+                            ),
+                          ],
+                        ).animate(delay: 80.ms).fadeIn(duration: 400.ms),
                 ),
-              ],
-            ),
+              ),
+
+              // ── Menu sections ──────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        _ProfileSectionTile(
+                          icon: Icons.history_rounded,
+                          iconColor: colorScheme.primary,
+                          title: 'Historique des avis',
+                          subtitle: 'Voir vos avis publiés',
+                          onTap: () => context.push('/user-reviews'),
+                        ),
+                        _SectionDivider(),
+                        _ProfileSectionTile(
+                          icon: Icons.favorite_rounded,
+                          iconColor: Colors.red.shade400,
+                          title: 'Mes favoris',
+                          subtitle: 'Accéder à votre liste de favoris',
+                          onTap: () => context.push('/favorites'),
+                        ),
+                        _SectionDivider(),
+                        _ProfileSectionTile(
+                          icon: Icons.settings_rounded,
+                          iconColor: colorScheme.secondary,
+                          title: 'Paramètres',
+                          subtitle: 'Notifications, langue et thème',
+                          onTap: _openSettingsSheet,
+                        ),
+                        _SectionDivider(),
+                        userBusinessAsync.when(
+                          data: (business) {
+                            if (business != null) {
+                              return _ProfileSectionTile(
+                                icon: Icons.storefront_rounded,
+                                iconColor: colorScheme.tertiary,
+                                title: 'Mon entreprise',
+                                subtitle: 'Gérer votre présence professionnelle',
+                                onTap: () async {
+                                  final status = business['status'];
+                                  if (status == 'pending') {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('En attente'),
+                                        content: const Text('Votre demande est en cours d\'examen par un administrateur.'),
+                                        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                                      ),
+                                    );
+                                  } else if (status == 'rejected') {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Demande rejetée'),
+                                        content: const Text('Désolé, votre demande a été rejetée. Veuillez contacter le support.'),
+                                        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                                      ),
+                                    );
+                                  } else if (status == 'approved') {
+                                    if (user?.userMetadata?['account_type'] != 'business_owner') {
+                                      await SupabaseDataService().updateAccountType('business_owner');
+                                    }
+                                    if (context.mounted) context.push('/business/dashboard');
+                                  }
+                                },
+                              );
+                            } else {
+                              return _ProfileSectionTile(
+                                icon: Icons.add_business_rounded,
+                                iconColor: colorScheme.tertiary,
+                                title: 'Créer mon entreprise',
+                                subtitle: 'Enregistrez votre établissement',
+                                onTap: () => context.push('/business/create'),
+                              );
+                            }
+                          },
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (error, stack) => _ProfileSectionTile(
+                            icon: Icons.error_outline,
+                            iconColor: colorScheme.error,
+                            title: 'Erreur',
+                            subtitle: error.toString(),
+                            onTap: () {},
+                          ),
+                        ),
+                        _SectionDivider(),
+                        _ProfileSectionTile(
+                          icon: Icons.headset_mic_rounded,
+                          iconColor: Colors.teal,
+                          title: 'Aide & Support',
+                          subtitle: 'Contacter l\'assistance ReviewApp',
+                          onTap: _showHelp,
+                        ),
+                        _SectionDivider(),
+                        _ProfileSectionTile(
+                          icon: Icons.info_outline_rounded,
+                          iconColor: Colors.blueGrey,
+                          title: 'À propos',
+                          subtitle: 'Version et informations légales',
+                          onTap: _showAbout,
+                        ),
+                        _SectionDivider(),
+                        _ProfileSectionTile(
+                          icon: Icons.logout_rounded,
+                          iconColor: colorScheme.error,
+                          title: 'Déconnexion',
+                          subtitle: 'Se déconnecter de votre compte',
+                          onTap: _confirmLogout,
+                          foregroundColor: colorScheme.error,
+                        ),
+                      ],
+                    ),
+                  ).animate(delay: 140.ms).fadeIn(duration: 400.ms),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -681,66 +807,78 @@ class _ProfileStatCard extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.color,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    return SizedBox(
-      width: 164,
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: colorScheme.outlineVariant),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: colorScheme.onPrimaryContainer,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      value,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
-        ),
+        ],
       ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      indent: 64,
+      endIndent: 16,
+      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
     );
   }
 }
@@ -751,6 +889,7 @@ class _ProfileSectionTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.iconColor,
     this.foregroundColor,
   });
 
@@ -758,32 +897,66 @@ class _ProfileSectionTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Color? iconColor;
   final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final effectiveColor = foregroundColor ?? colorScheme.onSurface;
+    final effectiveIconColor = iconColor ?? colorScheme.primary;
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: effectiveColor.withValues(alpha: 0.12),
-        child: Icon(icon, color: effectiveColor),
-      ),
-      title: Text(title, style: TextStyle(color: effectiveColor)),
-      subtitle: Text(
-        subtitle,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: foregroundColor != null
-              ? effectiveColor.withValues(alpha: 0.85)
-              : colorScheme.onSurfaceVariant,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: effectiveIconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: effectiveIconColor, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: effectiveColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: foregroundColor != null
+                            ? effectiveColor.withValues(alpha: 0.7)
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: colorScheme.onSurfaceVariant,
-      ),
-      onTap: onTap,
     );
   }
 }

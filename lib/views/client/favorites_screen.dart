@@ -37,7 +37,12 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       await ref.read(favoriteControllerProvider).removeFavorite(business.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${business.name} retiré des favoris.')),
+        SnackBar(
+          content: Text('${business.name} retiré des favoris.'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -45,6 +50,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         SnackBar(
           content: Text(e.toString()),
           backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         ),
       );
     }
@@ -52,12 +60,26 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final favoriteController = ref.watch(favoriteControllerProvider);
     final favorites = favoriteController.favorites;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favoris'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Mes Favoris'),
+            if (favorites.isNotEmpty)
+              Text(
+                '${favorites.length} établissement${favorites.length > 1 ? 's' : ''}',
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -137,8 +159,8 @@ class _FavoritesGrid extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 260,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
         childAspectRatio: 0.78,
       ),
       itemCount: favorites.length,
@@ -150,22 +172,25 @@ class _FavoritesGrid extends StatelessWidget {
           direction: DismissDirection.up,
           background: const _DismissBackground(),
           onDismissed: (_) => onRemove(business),
-          child:
-              _FavoriteGridCard(
-                    business: business,
-                    onRemove: () => onRemove(business),
-                  )
-                  .animate()
-                  .fadeIn(duration: 260.ms)
-                  .scale(
-                    begin: const Offset(0.96, 0.96),
-                    end: const Offset(1, 1),
-                  ),
+          child: _FavoriteGridCard(
+                business: business,
+                onRemove: () => onRemove(business),
+              )
+              .animate()
+              .fadeIn(duration: 260.ms)
+              .scale(
+                begin: const Offset(0.95, 0.95),
+                end: const Offset(1, 1),
+              ),
         );
       },
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// List card
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _FavoriteListCard extends StatelessWidget {
   const _FavoriteListCard({required this.business, required this.onRemove});
@@ -178,65 +203,126 @@ class _FavoriteListCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: colorScheme.outlineVariant),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () => context.go('/home/business/${business.id}'),
-        child: Row(
-          children: [
-            Hero(
-              tag: 'business-cover-${business.id}',
-              child: Image.network(
-                business.imageUrl,
-                width: 112,
-                height: 118,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      business.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.go('/home/business/${business.id}'),
+            child: Row(
+              children: [
+                // Image
+                Hero(
+                  tag: 'business-cover-${business.id}',
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                    ),
+                    child: Image.network(
+                      business.imageUrl,
+                      width: 110,
+                      height: 110,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 110,
+                        height: 110,
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      business.categoryName,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _RatingLine(business: business),
-                  ],
+                  ),
                 ),
-              ),
+
+                // Info
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          business.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.category_outlined,
+                              size: 11,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                business.categoryName,
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _RatingLine(business: business),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Remove btn
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: IconButton(
+                    tooltip: 'Retirer des favoris',
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.favorite_rounded),
+                    color: colorScheme.error,
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.errorContainer.withValues(
+                        alpha: 0.3,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            IconButton(
-              tooltip: 'Retirer des favoris',
-              onPressed: onRemove,
-              icon: const Icon(Icons.favorite_rounded),
-              color: colorScheme.error,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Grid card
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _FavoriteGridCard extends StatelessWidget {
   const _FavoriteGridCard({required this.business, required this.onRemove});
@@ -249,66 +335,114 @@ class _FavoriteGridCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: colorScheme.outlineVariant),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () => context.go('/business/${business.id}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: 'business-cover-${business.id}',
-                    child: Image.network(business.imageUrl, fit: BoxFit.cover),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Material(
+          color: colorScheme.surface,
+          child: InkWell(
+            onTap: () => context.go('/home/business/${business.id}'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Hero(
+                        tag: 'business-cover-${business.id}',
+                        child: Image.network(
+                          business.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.storefront_rounded,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Gradient overlay
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: const [0.5, 1.0],
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.25),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: GestureDetector(
+                          onTap: onRemove,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.favorite_rounded,
+                              color: colorScheme.error,
+                              size: 17,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: IconButton.filledTonal(
-                      tooltip: 'Retirer des favoris',
-                      onPressed: onRemove,
-                      icon: const Icon(Icons.favorite_rounded),
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        business.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        business.categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _RatingLine(business: business),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    business.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    business.categoryName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _RatingLine(business: business),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -327,19 +461,19 @@ class _RatingLine extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.star_rounded, color: colorScheme.tertiary, size: 19),
+        Icon(Icons.star_rounded, color: const Color(0xFFFFC107), size: 15),
         const SizedBox(width: 3),
         Text(
           business.rating.toStringAsFixed(1),
-          style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+          style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 5),
         Expanded(
           child: Text(
             '${business.reviewCount} avis',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.copyWith(
+            style: textTheme.labelSmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
@@ -358,12 +492,26 @@ class _DismissBackground extends StatelessWidget {
 
     return Container(
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Icon(Icons.delete_rounded, color: colorScheme.onErrorContainer),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.heart_broken_rounded, color: colorScheme.onErrorContainer),
+          const SizedBox(height: 4),
+          Text(
+            'Retirer',
+            style: TextStyle(
+              color: colorScheme.onErrorContainer,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -378,44 +526,70 @@ class _EmptyFavoritesState extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(32),
       children: [
-        const SizedBox(height: 96),
-        Container(
-          width: 118,
-          height: 118,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.favorite_border_rounded,
-            size: 56,
-            color: colorScheme.onSurfaceVariant,
+        const SizedBox(height: 80),
+        Center(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.favorite_border_rounded,
+                  size: 48,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ],
+          ).animate().scale(
+            begin: const Offset(0.7, 0.7),
+            end: const Offset(1, 1),
+            duration: 500.ms,
+            curve: Curves.easeOutBack,
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 28),
         Text(
           'Aucun favori',
           textAlign: TextAlign.center,
           style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
+        ).animate(delay: 150.ms).fadeIn(duration: 400.ms),
+        const SizedBox(height: 10),
         Text(
-          'Gardez vos lieux preferes a portee de main en les ajoutant a vos favoris.',
+          'Gardez vos lieux préférés à portée de main en les ajoutant à vos favoris.',
           textAlign: TextAlign.center,
           style: textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
+            height: 1.5,
           ),
-        ),
-        const SizedBox(height: 22),
+        ).animate(delay: 220.ms).fadeIn(duration: 400.ms),
+        const SizedBox(height: 28),
         Center(
           child: FilledButton.icon(
             onPressed: () => context.go('/search'),
             icon: const Icon(Icons.explore_rounded),
             label: const Text('Explorer'),
-          ),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
         ),
       ],
     );
@@ -427,6 +601,23 @@ class _FavoritesLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      itemCount: 4,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        return Container(
+              height: 110,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(18),
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fade(begin: 0.4, end: 1, duration: 800.ms);
+      },
+    );
   }
 }
