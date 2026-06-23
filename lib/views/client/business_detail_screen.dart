@@ -392,7 +392,19 @@ class _ActionButtons extends StatelessWidget {
           child: _ActionButton(
             icon: Icons.directions_rounded,
             label: 'Itineraire',
-            onPressed: () {},
+            onPressed: () async {
+              final url = Uri.parse(
+                  'https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}');
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Impossible d'ouvrir la carte.")),
+                  );
+                }
+              }
+            },
           ),
         ),
         const SizedBox(width: 8),
