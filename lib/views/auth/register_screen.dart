@@ -24,7 +24,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  String _accountType = 'client';
+  final String _accountType = 'client';
   bool _acceptTerms = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -215,46 +215,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                         const SizedBox(height: 28),
 
-                        // ── Account type selector (card-based) ──
-                        Text(
-                          'Type de compte',
-                          style: textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
 
-                        const SizedBox(height: 10),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _AccountTypeCard(
-                                icon: Icons.person_rounded,
-                                label: 'Client',
-                                subtitle: 'Découvrir & noter',
-                                isSelected: _accountType == 'client',
-                                onTap: authController.isLoading
-                                    ? null
-                                    : () => setState(() => _accountType = 'client'),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _AccountTypeCard(
-                                icon: Icons.storefront_rounded,
-                                label: 'Propriétaire',
-                                subtitle: 'Gérer mon établissement',
-                                isSelected: _accountType == 'business_owner',
-                                onTap: authController.isLoading
-                                    ? null
-                                    : () => setState(() => _accountType = 'business_owner'),
-                              ),
-                            ),
-                          ],
-                        ).animate(delay: 120.ms).fadeIn(duration: 400.ms),
-
-                        const SizedBox(height: 22),
 
                         // ── Form fields ────────────────────────────
                         TextFormField(
@@ -447,104 +408,5 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Account type selector card
-// ─────────────────────────────────────────────────────────────────────────────
 
-class _AccountTypeCard extends StatelessWidget {
-  const _AccountTypeCard({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final bool isSelected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.outlineVariant.withValues(alpha: 0.6),
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.12),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : [],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? colorScheme.primary.withValues(alpha: 0.15)
-                        : colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  label,
-                  style: textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 

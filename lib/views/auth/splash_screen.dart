@@ -105,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                 const SizedBox(height: 8),
                 Text(
-                  'Trouvez les meilleurs services autour de vous',
+                  'La voix de votre quartier',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,

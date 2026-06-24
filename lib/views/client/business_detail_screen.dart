@@ -235,14 +235,7 @@ class _BusinessCoverAppBar extends StatelessWidget {
       stretch: true,
       backgroundColor: AppColors.transparent,
       foregroundColor: AppColors.white,
-      actions: [
-        IconButton.filledTonal(
-          tooltip: 'Partager',
-          onPressed: () {},
-          icon: const Icon(Icons.ios_share_rounded),
-        ),
-        const SizedBox(width: 8),
-      ],
+
       flexibleSpace: FlexibleSpaceBar(
         background: Hero(
           tag: 'business-cover-${business.id}',
@@ -364,33 +357,6 @@ class _ActionButtons extends StatelessWidget {
       children: [
         Expanded(
           child: _ActionButton(
-            icon: Icons.call_rounded,
-            label: 'Appeler',
-            onPressed: () async {
-              if (business.phone.isNotEmpty) {
-                final Uri url = Uri(scheme: 'tel', path: business.phone);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url);
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Impossible de lancer l\'appel.')),
-                    );
-                  }
-                }
-              } else {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Numéro de téléphone non renseigné.')),
-                  );
-                }
-              }
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _ActionButton(
             icon: Icons.directions_rounded,
             label: 'Itineraire',
             onPressed: () async {
@@ -416,14 +382,6 @@ class _ActionButtons extends StatelessWidget {
                 : Icons.favorite_border_rounded,
             label: 'Favoris',
             onPressed: onFavoriteToggle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.ios_share_rounded,
-            label: 'Partager',
-            onPressed: () {},
           ),
         ),
       ],

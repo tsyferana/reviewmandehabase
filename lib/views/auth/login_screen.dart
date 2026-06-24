@@ -126,15 +126,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // ── Scrollable content ───────────────────────────────────
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 40),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 24),
 
                     // ── Logo + header ──────────────────────────────
                     Column(
@@ -420,6 +423,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
           ),
+        ),
+      ),
         ],
       ),
       ),
