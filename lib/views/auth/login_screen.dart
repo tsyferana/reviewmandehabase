@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:review_app/utils/validators.dart';
 import '../../controllers/auth_providers.dart';
 import '../../routes/app_router.dart';
 
@@ -83,8 +84,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      body: Stack(
-        children: [
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
           // ── Ambient background ───────────────────────────────────
           Positioned.fill(
             child: DecoratedBox(
@@ -128,6 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -251,10 +254,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     setState(() => _emailFocused = v),
                                 colorScheme: colorScheme,
                                 textTheme: textTheme,
-                                validator: (v) =>
-                                    (v == null || !v.contains('@'))
-                                    ? 'Email invalide'
-                                    : null,
+                                validator: AppValidators.validateEmail,
                               )
                               .animate(delay: 200.ms)
                               .fadeIn(duration: 400.ms)
@@ -279,9 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     setState(() => _passwordFocused = v),
                                 colorScheme: colorScheme,
                                 textTheme: textTheme,
-                                validator: (v) => (v == null || v.length < 6)
-                                    ? 'Mot de passe trop court'
-                                    : null,
+                                validator: AppValidators.validatePassword,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
@@ -423,6 +421,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

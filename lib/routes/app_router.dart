@@ -99,6 +99,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
             isAuthenticated: true,
             userRole: role == 'business_owner' ? 'business' : role,
             userId: session.user.id,
+            isPasswordRecovery: state.isPasswordRecovery,
           );
         }
       } else if (event == AuthChangeEvent.signedOut) {

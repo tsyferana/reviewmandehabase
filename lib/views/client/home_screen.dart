@@ -233,7 +233,7 @@ class _SearchEntry extends StatelessWidget {
               children: [
                 Icon(
                   Icons.search_rounded,
-                  color: colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurface,
                   size: 22,
                 ),
                 const SizedBox(width: 12),
@@ -255,7 +255,7 @@ class _SearchEntry extends StatelessWidget {
                 ),
                 Icon(
                   Icons.tune_rounded,
-                  color: colorScheme.primary,
+                  color: colorScheme.onSurface,
                   size: 20,
                 ),
               ],
@@ -317,7 +317,9 @@ class _CategoryCarousel extends StatelessWidget {
                   ),
                   child: Icon(
                     category.icon,
-                    color: colorScheme.primary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : colorScheme.primary,
                     size: 26,
                   ),
                 ),
@@ -328,6 +330,7 @@ class _CategoryCarousel extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                     height: 1.2,
                   ),

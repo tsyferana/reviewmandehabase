@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../controllers/auth_providers.dart';
 import '../../routes/app_router.dart';
+import '../../utils/validators.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -102,8 +103,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authController = ref.watch(authControllerProvider);
 
     return Scaffold(
-      body: Stack(
-        children: [
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
           // ── Fond identique au login ──────────────────────────────
           Positioned.fill(
             child: DecoratedBox(
@@ -150,6 +152,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   constraints: const BoxConstraints(maxWidth: 460),
                   child: Form(
                     key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -262,7 +265,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             labelText: 'Nom complet',
                             prefixIcon: Icon(Icons.badge_outlined),
                           ),
-                          validator: _validateRequired,
+                          validator: AppValidators.validateRequired,
                         ).animate(delay: 140.ms).fadeIn(duration: 400.ms).slideY(begin: 0.04),
 
                         const SizedBox(height: 14),
@@ -276,7 +279,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             labelText: 'Email',
                             prefixIcon: Icon(Icons.mail_outline_rounded),
                           ),
-                          validator: _validateEmail,
+                          validator: AppValidators.validateEmail,
                         ).animate(delay: 170.ms).fadeIn(duration: 400.ms).slideY(begin: 0.04),
 
                         const SizedBox(height: 14),
@@ -290,7 +293,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             labelText: 'Telephone',
                             prefixIcon: Icon(Icons.phone_outlined),
                           ),
-                          validator: _validatePhone,
+                          validator: AppValidators.validatePhone,
                         ).animate(delay: 200.ms).fadeIn(duration: 400.ms).slideY(begin: 0.04),
 
                         const SizedBox(height: 14),
@@ -315,7 +318,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             ),
                           ),
-                          validator: _validatePassword,
+                          validator: AppValidators.validatePassword,
                         ).animate(delay: 230.ms).fadeIn(duration: 400.ms).slideY(begin: 0.04),
 
                         const SizedBox(height: 14),
@@ -341,7 +344,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             ),
                           ),
-                          validator: _validatePasswordConfirmation,
+                          validator: (v) => AppValidators.validateMatch(v, _passwordController.text),
                         ).animate(delay: 260.ms).fadeIn(duration: 400.ms).slideY(begin: 0.04),
 
                         const SizedBox(height: 10),
@@ -438,74 +441,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
-  String? _validateRequired(String? value) {
-    if ((value ?? '').trim().isEmpty) {
-      return 'Ce champ est requis.';
-    }
-
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-
-    if (email.isEmpty) {
-      return 'Veuillez saisir votre email.';
-    }
-
-    final isEmailValid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-    if (!isEmailValid) {
-      return 'Veuillez saisir un email valide.';
-    }
-
-    return null;
-  }
-
-  String? _validatePhone(String? value) {
-    final phone = value?.trim() ?? '';
-
-    if (phone.isEmpty) {
-      return 'Veuillez saisir votre telephone.';
-    }
-
-    final isPhoneValid = RegExp(r'^\+?[0-9\s().-]{8,}$').hasMatch(phone);
-    if (!isPhoneValid) {
-      return 'Veuillez saisir un numero de telephone valide.';
-    }
-
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    final password = value ?? '';
-
-    if (password.isEmpty) {
-      return 'Veuillez saisir votre mot de passe.';
-    }
-
-    if (password.length < 8) {
-      return 'Le mot de passe doit contenir au moins 8 caracteres.';
-    }
-
-    return null;
-  }
-
-  String? _validatePasswordConfirmation(String? value) {
-    final confirmation = value ?? '';
-
-    if (confirmation.isEmpty) {
-      return 'Veuillez confirmer votre mot de passe.';
-    }
-
-    if (confirmation != _passwordController.text) {
-      return 'Les mots de passe ne correspondent pas.';
-    }
-
-    return null;
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

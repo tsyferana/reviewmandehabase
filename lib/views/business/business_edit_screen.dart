@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/category_model.dart';
 import '../../services/supabase_data_service.dart';
+import '../../utils/validators.dart';
 
 class BusinessEditScreen extends StatefulWidget {
   const BusinessEditScreen({super.key});
@@ -523,6 +524,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
                 title: const Text('Informations générales'),
                 content: Form(
                   key: _formKeys[0],
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -619,6 +621,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
                 title: const Text('Coordonnées'),
                 content: Form(
                   key: _formKeys[1],
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -631,12 +634,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
                           prefixIcon: Icon(Icons.location_on_rounded),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value?.trim().isEmpty ?? true) {
-                            return 'Veuillez saisir une adresse.';
-                          }
-                          return null;
-                        },
+                        validator: AppValidators.validateRequired,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -647,12 +645,7 @@ class _BusinessEditScreenState extends State<BusinessEditScreen> {
                           prefixIcon: Icon(Icons.phone_rounded),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value?.trim().isEmpty ?? true) {
-                            return 'Veuillez saisir un numéro de téléphone.';
-                          }
-                          return null;
-                        },
+                        validator: AppValidators.validatePhone,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

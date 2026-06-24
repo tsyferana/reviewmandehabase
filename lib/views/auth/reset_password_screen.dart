@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../controllers/auth_providers.dart';
 import '../../routes/app_router.dart';
+import '../../utils/validators.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -104,8 +105,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      body: Stack(
-        children: [
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
           // ── Ambient background ───────────────────────────────────
           Positioned.fill(
             child: DecoratedBox(
@@ -167,7 +169,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     child: _done
                         ? _SuccessView(
                             key: const ValueKey('success'),
-                            onContinue: () => context.go('/login'),
+                            onContinue: () {
+                              ref.read(authStateProvider.notifier).logout();
+                              context.go('/login');
+                            },
                             colorScheme: colorScheme,
                             textTheme: textTheme,
                           )
@@ -201,6 +206,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -256,6 +262,7 @@ class _FormView extends StatelessWidget {
 
     return Form(
       key: formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -380,9 +387,7 @@ class _FormView extends StatelessWidget {
                         ),
                         onPressed: onTogglePassword,
                       ),
-                      validator: (v) => (v == null || v.length < 6)
-                          ? 'Au moins 6 caractères requis.'
-                          : null,
+                      validator: AppValidators.validatePassword,
                     ),
 
                     // Strength meter
@@ -425,9 +430,7 @@ class _FormView extends StatelessWidget {
                         ),
                         onPressed: onToggleConfirm,
                       ),
-                      validator: (v) => v != passwordController.text
-                          ? 'Les mots de passe ne correspondent pas.'
-                          : null,
+                      validator: (v) => AppValidators.validateMatch(v, passwordController.text),
                     ),
                   ],
                 ),

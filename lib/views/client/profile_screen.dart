@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../utils/validators.dart';
 
 
 import '../../controllers/auth_providers.dart';
@@ -75,6 +76,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _editProfile() {
+    final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: _fullName);
     File? localImageFile;
     bool isSaving = false;
@@ -89,8 +91,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             return AlertDialog(
               title: const Text('Modifier le profil'),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                child: Form(
+                  key: formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 10),
                     InkWell(
@@ -133,7 +138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    TextField(
+                    TextFormField(
                       controller: nameController,
                       enabled: !isSaving,
                       decoration: const InputDecoration(
@@ -141,6 +146,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         prefixIcon: Icon(Icons.person_outline_rounded),
                         border: OutlineInputBorder(),
                       ),
+                      validator: AppValidators.validateRequired,
                     ),
                     if (errorMessage != null) ...[
                       const SizedBox(height: 12),
@@ -151,6 +157,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                   ],
+                  ),
                 ),
               ),
               actions: [
@@ -160,6 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 FilledButton(
                   onPressed: isSaving ? null : () async {
+                    if (!formKey.currentState!.validate()) return;
                     setDialogState(() {
                       isSaving = true;
                       errorMessage = null;

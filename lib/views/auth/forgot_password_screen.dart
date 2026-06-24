@@ -2,8 +2,8 @@ import 'package:review_app/utils/couleur.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
+import '../../utils/validators.dart';
 import '../../controllers/auth_providers.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -86,9 +86,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isLoading = ref.watch(authControllerProvider).isLoading;
+    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           tooltip: 'Retour',
           icon: const Icon(Icons.arrow_back_rounded),
@@ -103,7 +107,45 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 },
         ),
       ),
-      body: SafeArea(
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            // ── Ambient background ───────────────────────────────────
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: const [0.0, 0.5, 1.0],
+                    colors: [
+                      colorScheme.primary.withValues(alpha: 0.07),
+                      colorScheme.surface,
+                      colorScheme.secondary.withValues(alpha: 0.05),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Top-right decorative orb
+            Positioned(
+              top: -size.width * 0.3,
+              right: -size.width * 0.2,
+              child: Container(
+                width: size.width * 0.65,
+                height: size.width * 0.65,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      colorScheme.primary.withValues(alpha: 0.14),
+                      colorScheme.primary.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -111,6 +153,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -156,7 +199,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         prefixIcon: Icon(Icons.mail_outline_rounded),
                         border: OutlineInputBorder(),
                       ),
-                      validator: _validateEmail,
+                      validator: AppValidators.validateEmail,
                     ),
                     const SizedBox(height: 20),
                     FilledButton(
@@ -207,21 +250,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
         ),
       ),
+          ],
+        ),
+      ),
     ).animate().fadeIn(duration: 420.ms, curve: Curves.easeOutCubic);
   }
 
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-
-    if (email.isEmpty) {
-      return 'Veuillez saisir votre email.';
-    }
-
-    final isEmailValid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-    if (!isEmailValid) {
-      return 'Veuillez saisir un email valide.';
-    }
-
-    return null;
-  }
 }
