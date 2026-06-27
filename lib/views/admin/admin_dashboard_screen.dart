@@ -24,13 +24,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final List<int> _usersGrowthData = [285, 320, 298, 342];
   final List<String> _growthLabels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
 
-  final Map<String, int> _businessByCategory = {
-    'Restaurants': 95,
-    'Hôtels': 52,
-    'Boutiques': 68,
-    'Services': 73,
-    'Autres': 40,
-  };
+  Map<String, int> _businessByCategory = {};
 
   @override
   void initState() {
@@ -48,6 +42,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _totalReviews = stats['reviews'] ?? 0;
           _pendingReports = stats['pendingReports'] ?? 0;
           _pendingApprovals = stats['pendingApprovals'] ?? 0;
+          
+          if (stats['businessByCategory'] != null) {
+            _businessByCategory = Map<String, int>.from(stats['businessByCategory']);
+          } else {
+            _businessByCategory = {};
+          }
+          
           _isLoading = false;
         });
       }
@@ -66,9 +67,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         slivers: [
           // ── Premium SliverAppBar ──────────────────────────────────
           SliverAppBar(
-            expandedHeight: 130,
-            collapsedHeight: 70,
-            toolbarHeight: 70,
+            expandedHeight: 80,
+            collapsedHeight: 60,
+            toolbarHeight: 60,
             pinned: true,
             centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
@@ -149,9 +150,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         MediaQuery.sizeOf(context).width >= 900 ? 5 : 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.1,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 2.2,
                     children: [
                       _StatCard(
                         label: 'Utilisateurs',
@@ -219,6 +220,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 data: _usersGrowthData,
                                 labels: _growthLabels,
                                 color: const Color(0xFF3B82F6),
+                                legend: 'Nouveaux utilisateurs',
                               ),
                             ),
                           ),
@@ -248,6 +250,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             data: _usersGrowthData,
                             labels: _growthLabels,
                             color: const Color(0xFF3B82F6),
+                            legend: 'Nouveaux utilisateurs',
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -279,9 +282,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         MediaQuery.sizeOf(context).width >= 600 ? 4 : 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 2.5,
                     children: [
                       _QuickActionCard(
                         icon: Icons.people_rounded,
@@ -365,14 +368,12 @@ class _StatCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -386,32 +387,35 @@ class _StatCard extends StatelessWidget {
               ),
               child: Icon(icon, color: color, size: 18),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '$value',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: colorScheme.onSurface,
-                      letterSpacing: -0.5,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '$value',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colorScheme.onSurface,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  label,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
+                  Text(
+                    label,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -540,27 +544,29 @@ class _QuickActionCard extends StatelessWidget {
           child: Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(icon, color: color, size: 24),
+                      child: Icon(icon, color: color, size: 20),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      label,
-                      style: textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -605,15 +611,17 @@ class _LineChartWidget extends StatelessWidget {
     required this.data,
     required this.labels,
     required this.color,
+    this.legend,
   });
 
   final List<int> data;
   final List<String> labels;
   final Color color;
+  final String? legend;
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
+    final chart = CustomPaint(
       painter: _LineChartPainter(
         data: data,
         labels: labels,
@@ -623,6 +631,38 @@ class _LineChartWidget extends StatelessWidget {
         labelColor: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       child: const SizedBox.expand(),
+    );
+
+    if (legend == null) return chart;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0, left: 16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                legend!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: chart),
+      ],
     );
   }
 }

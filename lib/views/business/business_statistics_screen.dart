@@ -341,6 +341,7 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
                     _SimpleLineChart(
                       data: _viewsData[_selectedPeriod]!,
                       color: Colors.blue,
+                      legend: 'Nombre de vues',
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -393,6 +394,7 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
                     _SimpleLineChart(
                       data: _reviewsData[_selectedPeriod]!,
                       color: AppColors.warning,
+                      legend: 'Nombre d\'avis',
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -703,22 +705,53 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _SimpleLineChart extends StatelessWidget {
-  const _SimpleLineChart({required this.data, required this.color});
+  const _SimpleLineChart({required this.data, required this.color, this.legend});
 
   final List<int> data;
   final Color color;
+  final String? legend;
 
   @override
   Widget build(BuildContext context) {
     const chartHeight = 120.0;
 
-    return CustomPaint(
+    final chart = CustomPaint(
       painter: _LineChartPainter(
         data: data,
         color: color,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      size: Size(double.infinity, chartHeight),
+      size: const Size(double.infinity, chartHeight),
+    );
+
+    if (legend == null) return chart;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              legend!,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        chart,
+      ],
     );
   }
 }

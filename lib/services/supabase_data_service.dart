@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/business_model.dart';
 import '../models/category_model.dart';
 import '../models/review_model.dart';
+import 'location_sim_service.dart';
 
 class SupabaseDataService {
   final _supabase = Supabase.instance.client;
+  final _locationService = LocationSimService();
 
   Future<List<CategoryModel>> getCategories() async {
     final response = await _supabase.from('categories').select();
@@ -33,8 +36,22 @@ class SupabaseDataService {
         debugPrint('Fallback rating fetch failed: $e');
       }
     }
-    
-    return response.map((e) => BusinessModel.fromJson(e)).toList();
+
+    final businesses = response.map((e) => BusinessModel.fromJson(e)).toList();
+
+    try {
+      final userLoc = await _locationService.getCurrentLocation();
+      final userLatLng = LatLng(userLoc.latitude, userLoc.longitude);
+      const distanceCalc = Distance();
+      
+      return businesses.map((business) {
+        final bizLatLng = LatLng(business.latitude, business.longitude);
+        final distInMeters = distanceCalc.distance(userLatLng, bizLatLng);
+        return business.copyWith(distanceKm: distInMeters / 1000.0);
+      }).toList();
+    } catch (_) {
+      return businesses;
+    }
   }
 
   Future<BusinessModel?> getBusinessById(String id) async {
@@ -50,7 +67,17 @@ class SupabaseDataService {
       debugPrint('Fallback rating fetch failed: $e');
     }
     
-    return BusinessModel.fromJson(response);
+    var business = BusinessModel.fromJson(response);
+    
+    try {
+      final userLoc = await _locationService.getCurrentLocation();
+      final userLatLng = LatLng(userLoc.latitude, userLoc.longitude);
+      final bizLatLng = LatLng(business.latitude, business.longitude);
+      final distInMeters = const Distance().distance(userLatLng, bizLatLng);
+      business = business.copyWith(distanceKm: distInMeters / 1000.0);
+    } catch (_) {}
+    
+    return business;
   }
 
   Future<List<ReviewModel>> getReviewsForBusiness(String businessId) async {
@@ -236,14 +263,29 @@ class SupabaseDataService {
 
   // ================= ADMIN METHODS =================
 
-  Future<Map<String, int>> getAdminDashboardStats() async {
+  Future<Map<String, dynamic>> getAdminDashboardStats() async {
     final usersResp = await _supabase.from('profiles').select('id');
-    final bizResp = await _supabase.from('businesses').select('id, status');
+    final bizResp = await _supabase.from('businesses').select('id, status, categories(name)');
     final reviewsResp = await _supabase.from('reviews').select('id');
     final reportsResp = await _supabase.from('reports').select('id, status');
 
     int pendingBiz = bizResp.where((b) => b['status'] == 'pending').length;
     int pendingReports = reportsResp.where((r) => r['status'] == 'pending').length;
+
+    Map<String, int> categoryCounts = {};
+    for (var b in bizResp) {
+      final cat = b['categories'];
+      String catName = 'Autres';
+      if (cat != null && cat is Map && cat['name'] != null) {
+        catName = cat['name'] as String;
+      }
+      categoryCounts[catName] = (categoryCounts[catName] ?? 0) + 1;
+    }
+
+    // Si la map est vide, on met quelques catégories à 0 pour l'affichage
+    if (categoryCounts.isEmpty) {
+      categoryCounts = {'Restaurants': 0, 'Hôtels': 0, 'Boutiques': 0, 'Services': 0, 'Autres': 0};
+    }
 
     return {
       'users': usersResp.length,
@@ -251,6 +293,7 @@ class SupabaseDataService {
       'reviews': reviewsResp.length,
       'pendingReports': pendingReports,
       'pendingApprovals': pendingBiz,
+      'businessByCategory': categoryCounts,
     };
   }
 

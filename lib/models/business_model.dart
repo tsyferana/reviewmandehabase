@@ -5,7 +5,7 @@ class BusinessModel {
     this.ownerId,
     this.categoryId,
     this.categoryName = '',
-    this.city = 'Antananarivo',
+    this.city = '',
     this.imageUrl = '',
     this.rating = 0.0,
     this.reviewCount = 0,
@@ -51,7 +51,9 @@ class BusinessModel {
       name: json['name']?.toString() ?? '',
       ownerId: json['owner_id']?.toString(),
       categoryId: json['category_id']?.toString(),
-      categoryName: json['categories'] != null ? json['categories']['name']?.toString() ?? '' : '',
+      categoryName: json['categories'] != null
+          ? json['categories']['name']?.toString() ?? ''
+          : '',
       city: json['city']?.toString() ?? 'Antananarivo',
       imageUrl: json['image_url']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
@@ -65,12 +67,17 @@ class BusinessModel {
       description: json['description']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
       email: json['email']?.toString(),
-      galleryUrls: (json['gallery_urls'] as List?)?.map((e) {
-        if (e is String) return e;
-        if (e is Map) return e.values.firstOrNull?.toString() ?? e.toString();
-        return e.toString();
-      }).toList() ?? [],
-      openingHours: json['opening_hours'] is Map ? Map<String, dynamic>.from(json['opening_hours'] as Map) : {},
+      galleryUrls:
+          (json['gallery_urls'] as List?)?.map((e) {
+            if (e is String) return e;
+            if (e is Map)
+              return e.values.firstOrNull?.toString() ?? e.toString();
+            return e.toString();
+          }).toList() ??
+          [],
+      openingHours: json['opening_hours'] is Map
+          ? Map<String, dynamic>.from(json['opening_hours'] as Map)
+          : {},
       services: json['services'] is List
           ? (json['services'] as List).map((e) {
               final m = e as Map;
@@ -106,5 +113,53 @@ class BusinessModel {
       'opening_hours': openingHours,
       'services': services,
     };
+  }
+
+  BusinessModel copyWith({
+    String? id,
+    String? name,
+    String? ownerId,
+    String? categoryId,
+    String? categoryName,
+    String? city,
+    String? imageUrl,
+    double? rating,
+    int? reviewCount,
+    double? distanceKm,
+    bool? isPopular,
+    double? latitude,
+    double? longitude,
+    bool? isOpen,
+    String? address,
+    String? description,
+    String? phone,
+    String? email,
+    List<String>? galleryUrls,
+    Map<String, dynamic>? openingHours,
+    List<Map<String, String>>? services,
+  }) {
+    return BusinessModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      ownerId: ownerId ?? this.ownerId,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      city: city ?? this.city,
+      imageUrl: imageUrl ?? this.imageUrl,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
+      distanceKm: distanceKm ?? this.distanceKm,
+      isPopular: isPopular ?? this.isPopular,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      isOpen: isOpen ?? this.isOpen,
+      address: address ?? this.address,
+      description: description ?? this.description,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      galleryUrls: galleryUrls ?? this.galleryUrls,
+      openingHours: openingHours ?? this.openingHours,
+      services: services ?? this.services,
+    );
   }
 }

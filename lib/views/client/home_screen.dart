@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../controllers/home_controller.dart';
 import '../../controllers/notification_controller.dart';
 import '../../models/business_model.dart';
+import '../../services/location_sim_service.dart';
 import '../../models/category_model.dart';
 import '../../widgets/favorite_button.dart';
 
@@ -19,8 +20,31 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? _selectedCategoryId;
+  String _currentCity = 'Chargement...';
+
   Future<void> _refresh() {
     return ref.read(homeControllerProvider.notifier).refresh();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserLocation();
+  }
+
+  Future<void> _fetchUserLocation() async {
+    final locationService = LocationSimService();
+    try {
+      final location = await locationService.getCurrentLocation();
+      if (mounted) {
+        setState(() {
+          _currentCity = location.city;
+        });
+      }
+    } catch (e) {
+      // Gérer l'erreur si la localisation échoue
+    }
   }
 
   @override
@@ -29,60 +53,142 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: homeState.maybeWhen(
-        data: (state) => _HomeAppBar(city: state.city),
-        orElse: () => const _HomeAppBar(city: 'Antananarivo'),
+        data: (state) => _HomeAppBar(city: _currentCity),
+        orElse: () => _HomeAppBar(city: _currentCity),
       ),
       body: homeState.when(
         loading: () => const _HomeSkeleton(),
         error: (error, stackTrace) => _HomeError(onRetry: _refresh),
-        data: (state) => RefreshIndicator(
-          onRefresh: _refresh,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-                  child: _SearchEntry(onTap: () => context.go('/search')),
+        data: (state) {
+          final filteredPopular = state.popularBusinesses
+              .where(
+                (b) =>
+                    _selectedCategoryId == null ||
+                    b.categoryId == _selectedCategoryId,
+              )
+              .toList();
+          final filteredTopRated = state.topRatedBusinesses
+              .where(
+                (b) =>
+                    _selectedCategoryId == null ||
+                    b.categoryId == _selectedCategoryId,
+              )
+              .toList();
+          final filteredNearby = state.nearbyBusinesses
+              .where(
+                (b) =>
+                    _selectedCategoryId == null ||
+                    b.categoryId == _selectedCategoryId,
+              )
+              .toList();
+
+          final isAllEmpty =
+              filteredPopular.isEmpty &&
+              filteredTopRated.isEmpty &&
+              filteredNearby.isEmpty;
+
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                    child: _SearchEntry(onTap: () => context.go('/search')),
+                  ),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: _CategoryCarousel(categories: state.categories),
-              ),
-              SliverToBoxAdapter(
-                child: _BusinessSection(
-                  title: 'Entreprises populaires',
-                  subtitle: 'Les plus visitées',
-                  icon: Icons.trending_up_rounded,
-                  businesses: state.popularBusinesses,
-                ).animate().fadeIn(duration: 420.ms).slideY(begin: 0.08),
-              ),
-              SliverToBoxAdapter(
-                child: _BusinessSection(
-                  title: 'Meilleures notes',
-                  subtitle: 'Très bien notées',
-                  icon: Icons.star_rounded,
-                  businesses: state.topRatedBusinesses,
-                )
-                    .animate()
-                    .fadeIn(delay: 120.ms, duration: 420.ms)
-                    .slideY(begin: 0.08),
-              ),
-              SliverToBoxAdapter(
-                child: _BusinessSection(
-                  title: 'Près de vous',
-                  subtitle: 'Dans votre quartier',
-                  icon: Icons.near_me_rounded,
-                  businesses: state.nearbyBusinesses,
-                )
-                    .animate()
-                    .fadeIn(delay: 220.ms, duration: 420.ms)
-                    .slideY(begin: 0.08),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            ],
-          ),
-        ),
+                SliverToBoxAdapter(
+                  child: _CategoryCarousel(
+                    categories: state.categories,
+                    selectedCategoryId: _selectedCategoryId,
+                    onCategoryTap: (categoryId) {
+                      setState(() {
+                        _selectedCategoryId = _selectedCategoryId == categoryId
+                            ? null
+                            : categoryId;
+                      });
+                    },
+                  ),
+                ),
+                if (isAllEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 64,
+                        horizontal: 24,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.storefront_rounded,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Aucun commerce trouvé',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Il n\'y a pas encore d\'établissement dans cette catégorie.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else ...[
+                  if (filteredPopular.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _BusinessSection(
+                        title: 'Entreprises populaires',
+                        subtitle: 'Les plus visitées',
+                        icon: Icons.trending_up_rounded,
+                        businesses: filteredPopular,
+                      ).animate().fadeIn(duration: 420.ms).slideY(begin: 0.08),
+                    ),
+                  if (filteredTopRated.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child:
+                          _BusinessSection(
+                                title: 'Meilleures notes',
+                                subtitle: 'Très bien notées',
+                                icon: Icons.star_rounded,
+                                businesses: filteredTopRated,
+                              )
+                              .animate()
+                              .fadeIn(delay: 120.ms, duration: 420.ms)
+                              .slideY(begin: 0.08),
+                    ),
+                  if (filteredNearby.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child:
+                          _BusinessSection(
+                                title: 'Près de vous',
+                                subtitle: 'Dans votre quartier',
+                                icon: Icons.near_me_rounded,
+                                businesses: filteredNearby,
+                              )
+                              .animate()
+                              .fadeIn(delay: 220.ms, duration: 420.ms)
+                              .slideY(begin: 0.08),
+                    ),
+                ],
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -272,9 +378,15 @@ class _SearchEntry extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CategoryCarousel extends StatelessWidget {
-  const _CategoryCarousel({required this.categories});
+  const _CategoryCarousel({
+    required this.categories,
+    required this.selectedCategoryId,
+    required this.onCategoryTap,
+  });
 
   final List<CategoryModel> categories;
+  final String? selectedCategoryId;
+  final ValueChanged<String> onCategoryTap;
 
   @override
   Widget build(BuildContext context) {
@@ -290,52 +402,74 @@ class _CategoryCarousel extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final category = categories[index];
-          return SizedBox(
-            width: 80,
-            child: Column(
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.secondaryContainer,
+          final isSelected = category.id == selectedCategoryId;
+          return GestureDetector(
+            onTap: () => onCategoryTap(category.id),
+            child: SizedBox(
+              width: 80,
+              child: Column(
+                children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isSelected
+                            ? [
+                                colorScheme.primary,
+                                colorScheme.primary.withValues(alpha: 0.8),
+                              ]
+                            : [
+                                colorScheme.primaryContainer,
+                                colorScheme.secondaryContainer,
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: isSelected
+                          ? Border.all(color: colorScheme.primary, width: 2)
+                          : null,
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? colorScheme.primary.withValues(alpha: 0.3)
+                              : colorScheme.primary.withValues(alpha: 0.12),
+                          blurRadius: isSelected ? 12 : 8,
+                          offset: isSelected
+                              ? const Offset(0, 4)
+                              : const Offset(0, 3),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.12),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    child: Icon(
+                      category.icon,
+                      color: isSelected
+                          ? Colors.white
+                          : (Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : colorScheme.primary),
+                      size: 26,
+                    ),
                   ),
-                  child: Icon(
-                    category.icon,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : colorScheme.primary,
-                    size: 26,
+                  const SizedBox(height: 8),
+                  Text(
+                    category.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.onSurface,
+                      fontWeight: isSelected
+                          ? FontWeight.w900
+                          : FontWeight.w700,
+                      height: 1.2,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  category.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ).animate(delay: (45 * index).ms).fadeIn().slideX(begin: 0.1);
         },
@@ -704,7 +838,9 @@ class _HomeError extends StatelessWidget {
             Text(
               'Impossible de charger\nl\'accueil',
               textAlign: TextAlign.center,
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 8),
             Text(

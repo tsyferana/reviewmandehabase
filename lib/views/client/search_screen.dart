@@ -28,22 +28,23 @@ class _SearchScreenState extends State<SearchScreen> {
   static const _pageSize = 5;
 
   final _searchController = TextEditingController();
+  final _mapController = MapController();
   final _scrollController = ScrollController();
   final _dataService = SupabaseDataService();
   final _locationService = LocationSimService();
   final _mapsService = MapsSimService();
 
   List<CategoryModel> _categories = [];
+  List<String> _addresses = [];
   List<BusinessModel> _businesses = [];
   List<BusinessModel> _visibleResults = [];
 
   String? _selectedCategoryId;
-  String _selectedCity = 'Antananarivo';
+  String? _selectedAddress;
   double _minimumRating = 0;
-  double _maximumDistance = 10;
   bool _openNow = false;
   bool _isLoading = true;
-  bool _isLocating = false;
+  LatLng _mapCenter = MapsSimService.antananarivoCenter;
   int _loadedCount = _pageSize;
   _SearchViewMode _viewMode = _SearchViewMode.list;
 
@@ -63,6 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -76,29 +78,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
     setState(() {
       _categories = results[0] as List<CategoryModel>;
+      _addresses =
+          (results[1] as List<BusinessModel>)
+              .map((b) => b.address)
+              .toSet()
+              .toList()
+            ..removeWhere((address) => address.trim().isEmpty)
+            ..sort();
       _businesses = results[1] as List<BusinessModel>;
       _isLoading = false;
     });
     _applyFilters();
-  }
-
-  Future<void> _locateAroundMe() async {
-    setState(() => _isLocating = true);
-    final location = await _locationService.getCurrentLocation();
-
-    if (!mounted) return;
-
-    setState(() {
-      _selectedCity = location.city;
-      _maximumDistance = 5;
-      _loadedCount = _pageSize;
-      _isLocating = false;
-    });
-    _applyFilters();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Recherche autour de ${location.city}.')),
-    );
   }
 
   void _handleScroll() {
@@ -127,16 +117,15 @@ class _SearchScreenState extends State<SearchScreen> {
       final matchesCategory =
           _selectedCategoryId == null ||
           business.categoryId == _selectedCategoryId;
-      final matchesCity = business.city == _selectedCity;
+      final matchesAddress =
+          _selectedAddress == null || business.address == _selectedAddress;
       final matchesRating = business.rating >= _minimumRating;
-      final matchesDistance = business.distanceKm <= _maximumDistance;
       final matchesOpenStatus = !_openNow || business.isOpen;
 
       return matchesQuery &&
           matchesCategory &&
-          matchesCity &&
+          matchesAddress &&
           matchesRating &&
-          matchesDistance &&
           matchesOpenStatus;
     }).toList()..sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
@@ -152,6 +141,21 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  void _resetFilters() {
+    // On retire temporairement le listener pour éviter un double appel de _applyFilters
+    _searchController.removeListener(_applyFilters);
+    _searchController.clear();
+    _searchController.addListener(_applyFilters);
+
+    setState(() {
+      _selectedCategoryId = null;
+      _selectedAddress = null;
+      _minimumRating = 0;
+      _openNow = false;
+    });
+    _applyFilters();
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredResults = _filteredResults;
@@ -165,29 +169,44 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           _FiltersBar(
             categories: _categories,
+            addresses: _addresses,
             selectedCategoryId: _selectedCategoryId,
-            selectedCity: _selectedCity,
+            selectedAddress: _selectedAddress,
             minimumRating: _minimumRating,
-            maximumDistance: _maximumDistance,
             openNow: _openNow,
-            isLocating: _isLocating,
+            onReset: _resetFilters,
             onCategoryChanged: (value) {
               setState(() => _selectedCategoryId = value);
               _applyFilters();
             },
+            onAddressChanged: (value) {
+              setState(() {
+                _selectedAddress = value;
+                if (value != null) {
+                  final firstInCity = _businesses.firstWhere(
+                    (b) => b.address == value,
+                    orElse: () => _businesses.first,
+                  );
+                  _mapCenter = LatLng(
+                    firstInCity.latitude,
+                    firstInCity.longitude,
+                  );
+                } else {
+                  _mapCenter = MapsSimService.antananarivoCenter;
+                }
+                _mapController.move(_mapCenter, 13);
+
+                _applyFilters();
+              });
+            },
             onMinimumRatingChanged: (value) {
               setState(() => _minimumRating = value);
-              _applyFilters();
-            },
-            onMaximumDistanceChanged: (value) {
-              setState(() => _maximumDistance = value);
               _applyFilters();
             },
             onOpenNowChanged: (value) {
               setState(() => _openNow = value);
               _applyFilters();
             },
-            onAroundMe: _locateAroundMe,
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -226,13 +245,15 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(
             child: _isLoading
                 ? const _SearchLoading()
-                : filteredResults.isEmpty
-                ? const _EmptySearchState()
                 : _viewMode == _SearchViewMode.map
                 ? _BusinessMap(
+                    mapController: _mapController,
+                    initialCenter: _mapCenter,
                     businesses: filteredResults,
                     mapsService: _mapsService,
                   )
+                : filteredResults.isEmpty
+                ? const _EmptySearchState()
                 : _ResultsList(
                     scrollController: _scrollController,
                     results: _visibleResults,
@@ -282,31 +303,29 @@ class _SearchField extends StatelessWidget {
 class _FiltersBar extends StatelessWidget {
   const _FiltersBar({
     required this.categories,
+    required this.addresses,
     required this.selectedCategoryId,
-    required this.selectedCity,
+    required this.selectedAddress,
     required this.minimumRating,
-    required this.maximumDistance,
     required this.openNow,
-    required this.isLocating,
+    required this.onReset,
     required this.onCategoryChanged,
+    required this.onAddressChanged,
     required this.onMinimumRatingChanged,
-    required this.onMaximumDistanceChanged,
     required this.onOpenNowChanged,
-    required this.onAroundMe,
   });
 
   final List<CategoryModel> categories;
+  final List<String> addresses;
   final String? selectedCategoryId;
-  final String selectedCity;
+  final String? selectedAddress;
   final double minimumRating;
-  final double maximumDistance;
   final bool openNow;
-  final bool isLocating;
+  final VoidCallback onReset;
   final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<String?> onAddressChanged;
   final ValueChanged<double> onMinimumRatingChanged;
-  final ValueChanged<double> onMaximumDistanceChanged;
   final ValueChanged<bool> onOpenNowChanged;
-  final VoidCallback onAroundMe;
 
   @override
   Widget build(BuildContext context) {
@@ -317,15 +336,9 @@ class _FiltersBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           ActionChip(
-            avatar: isLocating
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.my_location_rounded),
-            label: const Text('Autour de moi'),
-            onPressed: isLocating ? null : onAroundMe,
+            avatar: const Icon(Icons.clear_all_rounded),
+            label: const Text('Tous'),
+            onPressed: onReset,
           ),
           const SizedBox(width: 8),
           PopupMenuButton<String?>(
@@ -351,14 +364,35 @@ class _FiltersBar extends StatelessWidget {
                   : categories
                         .firstWhere(
                           (category) => category.id == selectedCategoryId,
+                          // Ajout d'une valeur par défaut au cas où la catégorie n'est pas trouvée
+                          // Bien que cela ne devrait pas arriver avec la logique actuelle.
+                          orElse: () =>
+                              const CategoryModel(id: '', name: 'Categorie'),
                         )
                         .name,
             ),
           ),
           const SizedBox(width: 8),
-          _FilterChipShell(
-            icon: Icons.location_city_rounded,
-            label: selectedCity,
+          PopupMenuButton<String?>(
+            tooltip: 'Adresse',
+            onSelected: onAddressChanged,
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem<String?>(
+                  child: Text('Toutes les adresses'),
+                ),
+                ...addresses.map(
+                  (address) => PopupMenuItem<String?>(
+                    value: address,
+                    child: Text(address),
+                  ),
+                ),
+              ];
+            },
+            child: _FilterChipShell(
+              icon: Icons.location_city_rounded,
+              label: selectedAddress ?? 'Adresse',
+            ),
           ),
           const SizedBox(width: 8),
           PopupMenuButton<double>(
@@ -375,20 +409,6 @@ class _FiltersBar extends StatelessWidget {
               label: minimumRating == 0
                   ? 'Note'
                   : '${minimumRating.toStringAsFixed(1)}+',
-            ),
-          ),
-          const SizedBox(width: 8),
-          PopupMenuButton<double>(
-            tooltip: 'Distance',
-            onSelected: onMaximumDistanceChanged,
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 2, child: Text('Moins de 2 km')),
-              PopupMenuItem(value: 5, child: Text('Moins de 5 km')),
-              PopupMenuItem(value: 10, child: Text('Moins de 10 km')),
-            ],
-            child: _FilterChipShell(
-              icon: Icons.route_rounded,
-              label: '< ${maximumDistance.toStringAsFixed(0)} km',
             ),
           ),
           const SizedBox(width: 8),
@@ -612,22 +632,27 @@ class _OpenStatusPill extends StatelessWidget {
 }
 
 class _BusinessMap extends StatelessWidget {
-  const _BusinessMap({required this.businesses, required this.mapsService});
+  const _BusinessMap({
+    required this.mapController,
+    required this.initialCenter,
+    required this.businesses,
+    required this.mapsService,
+  });
 
+  final MapController mapController;
+  final LatLng initialCenter;
   final List<BusinessModel> businesses;
   final MapsSimService mapsService;
 
   @override
   Widget build(BuildContext context) {
-    final initialPosition = businesses.isEmpty
-        ? MapsSimService.antananarivoCenter
-        : LatLng(businesses.first.latitude, businesses.first.longitude);
-
     return FlutterMap(
       key: const ValueKey('search_results_map'),
+      mapController: mapController,
       options: MapOptions(
-        initialCenter: initialPosition,
+        initialCenter: initialCenter,
         initialZoom: 13,
+        onPositionChanged: (position, hasGesture) {},
       ),
       children: [
         TileLayer(

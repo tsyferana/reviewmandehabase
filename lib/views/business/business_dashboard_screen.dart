@@ -379,7 +379,10 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          _SimpleLineChart(data: _viewsData),
+                          _SimpleLineChart(
+                            data: _viewsData,
+                            legend: 'Vues du profil',
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -701,9 +704,10 @@ class _GrowthCard extends StatelessWidget {
 }
 
 class _SimpleLineChart extends StatelessWidget {
-  const _SimpleLineChart({required this.data});
+  const _SimpleLineChart({required this.data, this.legend});
 
   final List<int> data;
+  final String? legend;
 
   @override
   Widget build(BuildContext context) {
@@ -711,14 +715,44 @@ class _SimpleLineChart extends StatelessWidget {
     final maxValue = data.reduce((a, b) => a > b ? a : b).toDouble();
     const chartHeight = 120.0;
 
-    return CustomPaint(
+    final chart = CustomPaint(
       painter: _LineChartPainter(
         data: data,
         maxValue: maxValue,
         color: colorScheme.primary,
         backgroundColor: colorScheme.surfaceContainerHighest,
       ),
-      size: Size(double.infinity, chartHeight),
+      size: const Size(double.infinity, chartHeight),
+    );
+
+    if (legend == null) return chart;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              legend!,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        chart,
+      ],
     );
   }
 }
