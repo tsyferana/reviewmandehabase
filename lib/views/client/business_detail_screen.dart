@@ -2,8 +2,7 @@ import 'package:review_app/utils/couleur.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,7 +14,6 @@ import '../../widgets/report_review_dialog.dart';
 import '../../controllers/favorite_providers.dart';
 import '../../repositories/review_repository.dart';
 import '../../services/maps_sim_service.dart';
-import '../../services/supabase_data_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,7 +31,7 @@ class BusinessDetailScreen extends ConsumerStatefulWidget {
 
 class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
   final _dataService = SupabaseDataService();
-  final _mapsService = MapsSimService();
+
 
   BusinessModel? _business;
   List<ReviewModel> _reviews = [];
@@ -137,9 +135,9 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
         await _dataService.recordBusinessView(widget.businessId);
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur vue: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erreur vue: $e')));
         }
       }
     }
@@ -196,9 +194,10 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                   ),
                   const SizedBox(height: 28),
                   _AboutSection(business: business),
-                  const SizedBox(height: 24),
-                  _ServicesSection(services: business.services),
-                  const SizedBox(height: 24),
+                  if (business.services.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _ServicesSection(services: business.services),
+                  ],
                   const SizedBox(height: 24),
                   _ReviewsSection(
                     businessId: widget.businessId,
@@ -357,17 +356,51 @@ class _ActionButtons extends StatelessWidget {
       children: [
         Expanded(
           child: _ActionButton(
+            icon: Icons.call_rounded,
+            label: 'Appeler',
+            onPressed: () async {
+              if (business.phone.isNotEmpty) {
+                final Uri url = Uri(scheme: 'tel', path: business.phone);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url);
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Impossible de lancer l\'appel.'),
+                      ),
+                    );
+                  }
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Numéro de téléphone non renseigné.'),
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _ActionButton(
             icon: Icons.directions_rounded,
             label: 'Itineraire',
             onPressed: () async {
               final url = Uri.parse(
-                  'https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}');
+                'https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}',
+              );
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               } else {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Impossible d'ouvrir la carte.")),
+                    const SnackBar(
+                      content: Text("Impossible d'ouvrir la carte."),
+                    ),
                   );
                 }
               }
@@ -426,8 +459,10 @@ class _PhotoGallery extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final validUrls = imageUrls.where((url) => url.isNotEmpty && url.startsWith('http')).toList();
-    
+    final validUrls = imageUrls
+        .where((url) => url.isNotEmpty && url.startsWith('http'))
+        .toList();
+
     if (validUrls.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -558,20 +593,14 @@ class _ServicesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fallbackServices = services.isEmpty
-        ? [
-            {'name': 'Consultation', 'price': '25 000 Ar'},
-            {'name': 'Service standard', 'price': '45 000 Ar'},
-            {'name': 'Service premium', 'price': 'Sur devis'},
-          ]
-        : services;
+    if (services.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionTitle(title: 'Services'),
         const SizedBox(height: 10),
-        ...fallbackServices.map((service) {
+        ...services.map((service) {
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.check_circle_outline_rounded),
@@ -611,22 +640,28 @@ class _ReviewsSection extends StatelessWidget {
         if (reviews.isEmpty)
           const Text('Aucun avis pour le moment.')
         else
-          ...reviews.map((review) => _ReviewTile(
-            review: review,
-            onReport: !review.isCurrentUser
-                ? () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => ReportReviewDialog(
-                        reviewId: review.id,
-                        onSubmit: (type, reason) async {
-                          await SupabaseDataService().createReport(review.id, type, reason);
-                        },
-                      ),
-                    );
-                  }
-                : null,
-          )),
+          ...reviews.map(
+            (review) => _ReviewTile(
+              review: review,
+              onReport: !review.isCurrentUser
+                  ? () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => ReportReviewDialog(
+                          reviewId: review.id,
+                          onSubmit: (type, reason) async {
+                            await SupabaseDataService().createReport(
+                              review.id,
+                              type,
+                              reason,
+                            );
+                          },
+                        ),
+                      );
+                    }
+                  : null,
+            ),
+          ),
       ],
     );
   }
@@ -685,7 +720,10 @@ class _ReviewTile extends StatelessWidget {
                             if (val == 'report') onReport?.call();
                           },
                           itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'report', child: Text('Signaler')),
+                            PopupMenuItem(
+                              value: 'report',
+                              child: Text('Signaler'),
+                            ),
                           ],
                         ),
                       ),

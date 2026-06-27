@@ -87,179 +87,267 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: SizedBox.expand(
         child: Stack(
           children: [
-          // ── Ambient background ───────────────────────────────────
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  stops: const [0.0, 0.5, 1.0],
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.07),
-                    colorScheme.surface,
-                    colorScheme.secondary.withValues(alpha: 0.05),
-                  ],
+            // ── Ambient background ───────────────────────────────────
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: const [0.0, 0.5, 1.0],
+                    colors: [
+                      colorScheme.primary.withValues(alpha: 0.07),
+                      colorScheme.surface,
+                      colorScheme.secondary.withValues(alpha: 0.05),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Top-right decorative orb
-          Positioned(
-            top: -size.width * 0.3,
-            right: -size.width * 0.2,
-            child: Container(
-              width: size.width * 0.65,
-              height: size.width * 0.65,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.14),
-                    colorScheme.primary.withValues(alpha: 0.0),
-                  ],
+            // Top-right decorative orb
+            Positioned(
+              top: -size.width * 0.3,
+              right: -size.width * 0.2,
+              child: Container(
+                width: size.width * 0.65,
+                height: size.width * 0.65,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      colorScheme.primary.withValues(alpha: 0.14),
+                      colorScheme.primary.withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // ── Scrollable content ───────────────────────────────────
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 24),
-
-                    // ── Logo + header ──────────────────────────────
-                    Column(
-                      children: [
-                        // Logo badge
-                        Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: BorderRadius.circular(22),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: colorScheme.primary.withValues(
-                                      alpha: 0.30,
-                                    ),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(14),
-                                child: Image.asset(
-                                  'assets/logo/logored.png',
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            )
-                            .animate()
-                            .fadeIn(
-                              duration: 500.ms,
-                              curve: Curves.easeOutCubic,
-                            )
-                            .scale(
-                              begin: const Offset(0.8, 0.8),
-                              end: const Offset(1.0, 1.0),
-                              duration: 600.ms,
-                              curve: Curves.easeOutBack,
-                            ),
-
-                        const SizedBox(height: 28),
-
-                        Text(
-                              'Bon retour !',
-                              style: textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: colorScheme.onSurface,
-                                letterSpacing: -0.3,
-                                height: 1.1,
-                              ),
-                              textAlign: TextAlign.center,
-                            )
-                            .animate(delay: 80.ms)
-                            .fadeIn(duration: 450.ms)
-                            .slideY(
-                              begin: 0.12,
-                              end: 0,
-                              duration: 450.ms,
-                              curve: Curves.easeOutCubic,
-                            ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-                              'Connectez-vous pour accéder à vos avis.',
-                              style: textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                height: 1.4,
-                              ),
-                              textAlign: TextAlign.center,
-                            )
-                            .animate(delay: 140.ms)
-                            .fadeIn(duration: 450.ms)
-                            .slideY(
-                              begin: 0.10,
-                              end: 0,
-                              duration: 450.ms,
-                              curve: Curves.easeOutCubic,
-                            ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // ── Form card ──────────────────────────────────
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(
-                          alpha: 0.45,
-                        ),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.10),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.shadow.withValues(alpha: 0.05),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
+            // ── Scrollable content ───────────────────────────────────
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Email field
-                          _AnimatedField(
-                                label: 'Adresse email',
-                                hint: 'vous@exemple.com',
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                prefixIcon: Icons.mail_outline_rounded,
-                                isFocused: _emailFocused,
-                                onFocusChange: (v) =>
-                                    setState(() => _emailFocused = v),
+                          const SizedBox(height: 24),
+
+                          // ── Logo + header ──────────────────────────────
+                          Column(
+                            children: [
+                              // Logo badge
+                              Container(
+                                    width: 72,
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(22),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colorScheme.primary.withValues(
+                                            alpha: 0.30,
+                                          ),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Image.asset(
+                                        'assets/logo/logored.png',
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  )
+                                  .animate()
+                                  .fadeIn(
+                                    duration: 500.ms,
+                                    curve: Curves.easeOutCubic,
+                                  )
+                                  .scale(
+                                    begin: const Offset(0.8, 0.8),
+                                    end: const Offset(1.0, 1.0),
+                                    duration: 600.ms,
+                                    curve: Curves.easeOutBack,
+                                  ),
+
+                              const SizedBox(height: 28),
+
+                              Text(
+                                    'Bon retour !',
+                                    style: textTheme.headlineMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: colorScheme.onSurface,
+                                      letterSpacing: -0.3,
+                                      height: 1.1,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                  .animate(delay: 80.ms)
+                                  .fadeIn(duration: 450.ms)
+                                  .slideY(
+                                    begin: 0.12,
+                                    end: 0,
+                                    duration: 450.ms,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+
+                              const SizedBox(height: 8),
+
+                              Text(
+                                    'Connectez-vous pour accéder à vos avis.',
+                                    style: textTheme.bodyLarge?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                  .animate(delay: 140.ms)
+                                  .fadeIn(duration: 450.ms)
+                                  .slideY(
+                                    begin: 0.10,
+                                    end: 0,
+                                    duration: 450.ms,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          // ── Form card ──────────────────────────────────
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.10,
+                                ),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.shadow.withValues(
+                                    alpha: 0.05,
+                                  ),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Email field
+                                _AnimatedField(
+                                      label: 'Adresse email',
+                                      hint: 'vous@exemple.com',
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      prefixIcon: Icons.mail_outline_rounded,
+                                      isFocused: _emailFocused,
+                                      onFocusChange: (v) =>
+                                          setState(() => _emailFocused = v),
+                                      colorScheme: colorScheme,
+                                      textTheme: textTheme,
+                                      validator: AppValidators.validateEmail,
+                                    )
+                                    .animate(delay: 200.ms)
+                                    .fadeIn(duration: 400.ms)
+                                    .slideY(
+                                      begin: 0.08,
+                                      end: 0,
+                                      duration: 400.ms,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+
+                                const SizedBox(height: 16),
+
+                                // Password field
+                                _AnimatedField(
+                                      label: 'Mot de passe',
+                                      hint: '••••••••',
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      prefixIcon: Icons.lock_outline_rounded,
+                                      isFocused: _passwordFocused,
+                                      onFocusChange: (v) =>
+                                          setState(() => _passwordFocused = v),
+                                      colorScheme: colorScheme,
+                                      textTheme: textTheme,
+                                      validator: AppValidators.validatePassword,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_off_outlined
+                                              : Icons.visibility_outlined,
+                                          size: 20,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                        onPressed: () => setState(
+                                          () => _obscurePassword =
+                                              !_obscurePassword,
+                                        ),
+                                      ),
+                                    )
+                                    .animate(delay: 260.ms)
+                                    .fadeIn(duration: 400.ms)
+                                    .slideY(
+                                      begin: 0.08,
+                                      end: 0,
+                                      duration: 400.ms,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+
+                                // Forgot password
+                                Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed: () =>
+                                            context.push('/forgot-password'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: colorScheme.primary,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 8,
+                                          ),
+                                          textStyle: textTheme.labelMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        child: const Text(
+                                          'Mot de passe oublié ?',
+                                        ),
+                                      ),
+                                    )
+                                    .animate(delay: 300.ms)
+                                    .fadeIn(duration: 400.ms),
+                              ],
+                            ),
+                          ).animate(delay: 180.ms).fadeIn(duration: 500.ms),
+
+                          const SizedBox(height: 20),
+
+                          // ── Primary CTA ────────────────────────────────
+                          _PrimaryButton(
+                                onPressed: isLoading ? null : _handleLogin,
+                                isLoading: isLoading,
                                 colorScheme: colorScheme,
                                 textTheme: textTheme,
-                                validator: AppValidators.validateEmail,
+                                label: 'Se connecter',
                               )
-                              .animate(delay: 200.ms)
+                              .animate(delay: 340.ms)
                               .fadeIn(duration: 400.ms)
                               .slideY(
                                 begin: 0.08,
@@ -270,163 +358,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                           const SizedBox(height: 16),
 
-                          // Password field
-                          _AnimatedField(
-                                label: 'Mot de passe',
-                                hint: '••••••••',
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                prefixIcon: Icons.lock_outline_rounded,
-                                isFocused: _passwordFocused,
-                                onFocusChange: (v) =>
-                                    setState(() => _passwordFocused = v),
-                                colorScheme: colorScheme,
-                                textTheme: textTheme,
-                                validator: AppValidators.validatePassword,
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    size: 20,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword,
-                                  ),
-                                ),
-                              )
-                              .animate(delay: 260.ms)
-                              .fadeIn(duration: 400.ms)
-                              .slideY(
-                                begin: 0.08,
-                                end: 0,
-                                duration: 400.ms,
-                                curve: Curves.easeOutCubic,
-                              ),
+                          const SizedBox(height: 32),
 
-                          // Forgot password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () => context.push('/forgot-password'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: colorScheme.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 8,
-                                ),
-                                textStyle: textTheme.labelMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                          // ── Register link ──────────────────────────────
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Pas encore de compte ?',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              child: const Text('Mot de passe oublié ?'),
-                            ),
-                          ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
+                              TextButton(
+                                onPressed: () => context.push('/register'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: colorScheme.primary,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  textStyle: textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                child: const Text("S'inscrire"),
+                              ),
+                            ],
+                          ).animate(delay: 460.ms).fadeIn(duration: 400.ms),
+
+                          const SizedBox(height: 24),
                         ],
                       ),
-                    ).animate(delay: 180.ms).fadeIn(duration: 500.ms),
-
-                    const SizedBox(height: 20),
-
-                    // ── Primary CTA ────────────────────────────────
-                    _PrimaryButton(
-                          onPressed: isLoading ? null : _handleLogin,
-                          isLoading: isLoading,
-                          colorScheme: colorScheme,
-                          textTheme: textTheme,
-                          label: 'Se connecter',
-                        )
-                        .animate(delay: 340.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(
-                          begin: 0.08,
-                          end: 0,
-                          duration: 400.ms,
-                          curve: Curves.easeOutCubic,
-                        ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Divider ────────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            color: colorScheme.outline.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'ou',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            color: colorScheme.outline.withValues(alpha: 0.25),
-                          ),
-                        ),
-                      ],
-                    ).animate(delay: 380.ms).fadeIn(duration: 400.ms),
-
-                    const SizedBox(height: 16),
-
-                    // ── Google button ──────────────────────────────
-                    _GoogleButton(
-                          onPressed: isLoading ? null : _handleGoogleLogin,
-                          isLoading: isLoading,
-                          colorScheme: colorScheme,
-                          textTheme: textTheme,
-                        )
-                        .animate(delay: 420.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(
-                          begin: 0.08,
-                          end: 0,
-                          duration: 400.ms,
-                          curve: Curves.easeOutCubic,
-                        ),
-
-                    const SizedBox(height: 32),
-
-                    // ── Register link ──────────────────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Pas encore de compte ?',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.push('/register'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: colorScheme.primary,
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            textStyle: textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          child: const Text("S'inscrire"),
-                        ),
-                      ],
-                    ).animate(delay: 460.ms).fadeIn(duration: 400.ms),
-
-                    const SizedBox(height: 24),
-                  ],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
-      ),
-        ],
-      ),
       ),
     );
   }

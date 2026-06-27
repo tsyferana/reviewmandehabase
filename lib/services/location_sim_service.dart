@@ -8,9 +8,6 @@ class LocationSimService {
 
   Future<Position?> _determineRealPosition() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return null;
-
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -23,14 +20,17 @@ class LocationSimService {
         return null;
       }
 
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return null;
+
       return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 5),
       );
     } catch (_) {
       return null;
     }
   }
+
 
   Future<String> getCurrentCity() async {
     try {
