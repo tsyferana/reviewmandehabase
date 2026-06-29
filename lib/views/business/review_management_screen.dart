@@ -164,7 +164,14 @@ class _ReviewManagementScreenState extends State<ReviewManagementScreen> {
     final filteredReviews = _getFilteredAndSortedReviews();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestion des avis'), centerTitle: false),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Gestion des avis'),
+        centerTitle: false,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
         child: Column(

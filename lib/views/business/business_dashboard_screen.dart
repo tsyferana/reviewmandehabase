@@ -28,7 +28,6 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
   int _totalReviews = 0;
   int _totalFavorites = 0;
   double _averageRating = 0.0;
-  int _visitorsThisMonth = 0;
   double _growthPercentage = 0.0; 
 
   // Mock chart data (views evolution over 7/30 days)
@@ -75,10 +74,36 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
         
         final viewsResponse = await Supabase.instance.client
             .from('business_views')
-            .select('id')
+            .select('id, created_at')
             .eq('business_id', biz['id']);
             
         _totalViews = viewsResponse.length;
+        
+        // Calculate growth percentage based on last 30 days vs previous 30 days
+        final now = DateTime.now();
+        final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+        final sixtyDaysAgo = now.subtract(const Duration(days: 60));
+
+        int recentViews = 0;
+        int previousViews = 0;
+
+        for (var view in viewsResponse) {
+          if (view['created_at'] != null) {
+            final createdAt = DateTime.parse(view['created_at']);
+            if (createdAt.isAfter(thirtyDaysAgo)) {
+              recentViews++;
+            } else if (createdAt.isAfter(sixtyDaysAgo)) {
+              previousViews++;
+            }
+          }
+        }
+
+        if (previousViews == 0) {
+          _growthPercentage = recentViews > 0 ? 100.0 : 0.0;
+        } else {
+          _growthPercentage = ((recentViews - previousViews) / previousViews) * 100.0;
+        }
+
         
         _totalReviews = reviews.length;
         if (reviews.isNotEmpty) {
@@ -328,12 +353,6 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                         label: 'Note moyenne',
                         value: '$_averageRating',
                         color: AppColors.starRating,
-                      ),
-                      _StatCard(
-                        icon: Icons.person_rounded,
-                        label: 'Visiteurs ce mois',
-                        value: '$_visitorsThisMonth',
-                        color: AppColors.success,
                       ),
                       _GrowthCard(
                         percentage: _growthPercentage,

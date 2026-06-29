@@ -314,11 +314,7 @@ class _SearchEntry extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
         boxShadow: [
           BoxShadow(
             color: colorScheme.shadow.withValues(alpha: 0.04),
@@ -327,9 +323,14 @@ class _SearchEntry extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withOpacity(0.7),
+          ),
+        ),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
@@ -426,10 +427,14 @@ class _CategoryCarousel extends StatelessWidget {
                                 colorScheme.secondaryContainer,
                               ],
                       ),
-                      borderRadius: BorderRadius.circular(16),
                       border: isSelected
                           ? Border.all(color: colorScheme.primary, width: 2)
-                          : null,
+                          : Border.all(
+                              color: colorScheme.outlineVariant.withOpacity(
+                                0.7,
+                              ),
+                            ),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: isSelected
@@ -580,6 +585,9 @@ class _BusinessCard extends StatelessWidget {
       width: 220,
       child: Container(
         decoration: BoxDecoration(
+          border: Border.all(
+            color: colorScheme.outlineVariant.withOpacity(0.6),
+          ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

@@ -79,29 +79,49 @@ AFTER INSERT ON public.reviews
 FOR EACH ROW EXECUTE FUNCTION public.trigger_notify_on_new_review();
 
 
--- B. Notification à l'auteur de l'avis quand le propriétaire répond
--- Supposons que la réponse est mise dans une colonne "owner_reply" de la table reviews
-CREATE OR REPLACE FUNCTION public.trigger_notify_on_owner_reply()
+-- B. Notification lors d'une réponse (Client ou Propriétaire) dans le fil de discussion
+CREATE OR REPLACE FUNCTION public.trigger_notify_on_reply()
 RETURNS TRIGGER AS $$
 DECLARE
   v_business_name TEXT;
+  v_owner_id UUID;
+  v_latest_reply JSONB;
+  v_sender_role TEXT;
 BEGIN
-  -- Vérifier si la réponse du propriétaire a été ajoutée (passe de null à not null, ou modifiée)
-  IF NEW.owner_reply IS NOT NULL AND (OLD.owner_reply IS NULL OR OLD.owner_reply != NEW.owner_reply) THEN
-    -- Récupérer le nom de l'entreprise
-    SELECT name INTO v_business_name
+  -- Vérifier si une nouvelle réponse a été ajoutée dans le JSONB 'replies'
+  IF jsonb_typeof(NEW.replies) = 'array' AND 
+     (OLD.replies IS NULL OR jsonb_typeof(OLD.replies) != 'array' OR jsonb_array_length(NEW.replies) > jsonb_array_length(OLD.replies)) THEN
+    
+    -- Récupérer le nom et le propriétaire de l'entreprise
+    SELECT name, owner_id INTO v_business_name, v_owner_id
     FROM public.businesses
     WHERE id = NEW.business_id;
 
-    -- Notifier l'auteur de l'avis
-    INSERT INTO public.notifications (user_id, title, message, type, related_id)
-    VALUES (
-      NEW.user_id,
-      'Réponse du propriétaire',
-      'Le propriétaire de ' || v_business_name || ' a répondu à votre avis.',
-      'reply',
-      NEW.business_id
-    );
+    -- Extraire la dernière réponse
+    v_latest_reply := NEW.replies->(jsonb_array_length(NEW.replies) - 1);
+    v_sender_role := v_latest_reply->>'senderRole';
+
+    IF v_sender_role = 'owner' THEN
+      -- Notifier l'auteur de l'avis
+      INSERT INTO public.notifications (user_id, title, message, type, related_id)
+      VALUES (
+        NEW.user_id,
+        'Nouvelle réponse',
+        'Le propriétaire de ' || v_business_name || ' a répondu à votre avis.',
+        'reply',
+        NEW.business_id
+      );
+    ELSIF v_sender_role = 'client' AND v_owner_id IS NOT NULL THEN
+      -- Notifier le propriétaire
+      INSERT INTO public.notifications (user_id, title, message, type, related_id)
+      VALUES (
+        v_owner_id,
+        'Nouveau message',
+        'Un client a répondu dans le fil de discussion de votre entreprise ' || v_business_name || '.',
+        'reply',
+        NEW.business_id
+      );
+    END IF;
   END IF;
 
   RETURN NEW;
@@ -111,7 +131,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP TRIGGER IF EXISTS on_review_replied ON public.reviews;
 CREATE TRIGGER on_review_replied
 AFTER UPDATE ON public.reviews
-FOR EACH ROW EXECUTE FUNCTION public.trigger_notify_on_owner_reply();
+FOR EACH ROW EXECUTE FUNCTION public.trigger_notify_on_reply();
 
 
 -- C. Notifications sur l'état d'une entreprise (Création, Approbation, Rejet)

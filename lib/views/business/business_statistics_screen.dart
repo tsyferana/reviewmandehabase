@@ -22,7 +22,6 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
   late Map<int, List<int>> _viewsData;
   late Map<int, List<int>> _reviewsData;
   late Map<int, List<String>> _daysLabels;
-  late Map<int, Map<String, int>> _trafficSources;
   late Map<int, Map<int, int>> _ratingDistribution;
 
   // Summary stats
@@ -47,13 +46,6 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
 
     _viewsData = { 7: List.filled(7, 0), 30: List.filled(30, 0), 90: List.filled(13, 0), 365: List.filled(12, 0) };
     _reviewsData = { 7: List.filled(7, 0), 30: List.filled(30, 0), 90: List.filled(13, 0), 365: List.filled(12, 0) };
-    
-    _trafficSources = { 
-      7: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0}, 
-      30: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0}, 
-      90: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0}, 
-      365: {'Recherche': 0, 'Carte': 0, 'Recommandations': 0, 'Direct': 0} 
-    };
     
     _ratingDistribution = { 
       7: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 
@@ -140,8 +132,6 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
               }
             }
           }
-          
-          _trafficSources[period] = {'Recherche': 60, 'Carte': 25, 'Recommandations': 10, 'Direct': 5};
         }
       });
     } catch (e) {
@@ -425,69 +415,6 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Traffic Sources Bar Chart
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Répartition par source de trafic',
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    ..._trafficSources[_selectedPeriod]!.entries.map((entry) {
-                      final percentage = entry.value;
-                      final label = entry.key;
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(label, style: textTheme.labelMedium),
-                                Text(
-                                  '$percentage%',
-                                  style: textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: percentage / 100,
-                                minHeight: 10,
-                                backgroundColor:
-                                    colorScheme.surfaceContainerHighest,
-                                valueColor: AlwaysStoppedAnimation(
-                                  _getTrafficSourceColor(label),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
             // Rating Distribution Chart
             Card(
               elevation: 0,
@@ -613,12 +540,6 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
                       text:
                           'Votre note moyenne (${stats.averageRating}) reste stable au-dessus de 4.5 étoiles',
                     ),
-                    const SizedBox(height: 10),
-                    _InsightItem(
-                      icon: Icons.search_rounded,
-                      text:
-                          'La recherche est votre principal source de trafic (${_trafficSources[_selectedPeriod]!['Recherche']}%)',
-                    ),
                   ],
                 ),
               ),
@@ -627,21 +548,6 @@ class _BusinessStatisticsScreenState extends State<BusinessStatisticsScreen> {
         ),
       ),
     );
-  }
-
-  Color _getTrafficSourceColor(String source) {
-    switch (source) {
-      case 'Recherche':
-        return Colors.blue;
-      case 'Carte':
-        return AppColors.success;
-      case 'Recommandations':
-        return AppColors.warning;
-      case 'Direct':
-        return Colors.purple;
-      default:
-        return AppColors.grey;
-    }
   }
 }
 
